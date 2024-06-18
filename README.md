@@ -22,9 +22,9 @@
      workflows use the "tube map" design for that. See https://nf-co.re/docs/contributing/design_guidelines#examples for examples.   -->
 <!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->
 
-1. Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))
-2. Present QC for raw reads ([`MultiQC`](http://multiqc.info/))
-
+1. Preprocesses scanpy anndata files to add analysis data of gene of interest gene expression levels, machine learning predictions, and cell cycle scores in any desired combination provided.
+2. Uses grouping function to produce tsv files of the relevant data for graphing.
+3. Graphs the grouped data using seaborn or ggplot2.
 ## Usage
 
 > [!NOTE]
@@ -38,8 +38,8 @@ First, prepare a samplesheet with your input data that looks as follows:
 `samplesheet.csv`:
 
 ```csv
-sample,fastq_1,fastq_2
-CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
+sample,sc_object
+SAMPLE_SCANPY_NAME,/path/to/scanpy/files/scanpy_file.h5ad
 ```
 
 Each row represents a fastq file (single-end) or a pair of fastq files (paired end).
