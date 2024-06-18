@@ -253,7 +253,30 @@
                     "hidden": true
                 }
             }
-        }
+        },
+        "analysis_options": {
+            "title": "Analysis Options",
+            "type": "object",
+            "description": "Pipeline-specific options",
+            "fa_icon": "fas fa-file-import",
+            "help_text": "These options are specific to the pipeline being run.",
+            "properties": {
+                "column1": {
+                    "type": "string",
+                    "default": "age",
+                    "description": "The first category to group by. Generally a phenotype-related variable, such as age.",
+                    "fa_icon": "fas fa-indent",
+                    "help_text": "The first category to group by. Generally a phenotype-related variable, such as age."
+                },
+                "column2": {
+                    "type": "string",
+                    "default": "sex",
+                    "description": "The second category to group by. Generally a categorical variable like tissue or cell type",
+                    "fa_icon": "fas fa-indent",
+                    "help_text": "The second category to group by. Generally a categorical variable like tissue or cell type"
+                }
+            }
+        }  
     },
     "allOf": [
         {
