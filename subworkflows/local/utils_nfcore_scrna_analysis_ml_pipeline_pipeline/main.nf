@@ -140,13 +140,13 @@ workflow PIPELINE_COMPLETION {
 //
 def validateInputSamplesheet(input) {
     // Assuming input has two elements: id and folder path
-    def (sample, sc_object_path) = input
+    def (sample, sc_object) = input
 
     // Check if the folder exists
-    if (!file(sc_object_path).exists()) {
-        error("File specified does not exist: ${sc_object_path}")
+    if (!file(sc_object).exists()) {
+        error("File specified does not exist: ${sc_object}")
     }
-    return [sample, sc_object_path]
+    return [sample, sc_object]
 }
 
 //
