@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 """
+This script processes data for graphing and saves the results to a tsv file.
 """
 import os
 import argparse
@@ -12,6 +13,13 @@ def process_data_for_graphing(graph_df: pd.DataFrame, level1_category: str, leve
     """
     Groups data by level1_category, level2_category, level3_category and returns a dataframe with the counts of each
     level2_category and level3_category to be used for plotting a 3 category grid of pie charts.
+    Input:
+        graph_df: a dataframe with the data to be processed
+        level1_category: the first category to group by
+        level2_category: the second category to group by
+        level3_category: the third category to group bye_df.to_csv(output_file, sep="\t", index=False)
+    Output:
+        graph_df_unique_counts: a dataframe with the counts of each level2_category and level3_category
     """
     # Calculate unique counts for each combination of level1_category, level2_category, and level3_category
     graph_df_unique_counts = graph_df.groupby(
@@ -30,7 +38,7 @@ def process_data_for_graphing(graph_df: pd.DataFrame, level1_category: str, leve
 
     # Set multiindex for graph_df_unique_counts
     multiindex_main_grouper = pd.MultiIndex.from_frame(
-        graph_df_unique_counts[[level1_category, level2_category, level3_category]])
+                graph_df_unique_counts[[level1_category, level2_category, level3_category]])
     graph_df_unique_counts = graph_df_unique_counts.drop(
         columns=[level1_category, level2_category, level3_category]).set_index(multiindex_main_grouper)
     graph_df_unique_counts["Proportion_{1}_Per_{0}".format(level1_category, level2_category)]  = count_age_celltype_df["Proportion_{1}_Per_{0}".format(level1_category, level2_category)] 
@@ -44,14 +52,26 @@ def process_data_for_graphing(graph_df: pd.DataFrame, level1_category: str, leve
     return graph_df_unique_counts
 
 def age_column_transform(age: str) -> int:
+    """
+    Converts age column to an integer.
+    """
     # Find number in string and return it as an int
     return int("".join(filter(str.isdigit, age)))
-def main(adata: sc.AnnData, output_path_base: str, colnamestart="combination_", level1_category: str = "age", level2_category: str = "cell_ontology_class", name_to_add: str = "Tabula"):
+
+def main(adata: sc.AnnData,
+         output_path_base: str,
+         level1_category: str,
+         level2_category: str,
+         name_to_add: str,
+         colnamestart: str = "combination_",):
+    """
+    Main function for generating the tables for graphing of the gene combinations.
+    """
     # Define gene combinations based on the column names added during preprocessing
     gene_combinations = [col for col in adata.obs.columns if col.startswith(colnamestart)]
 
     # Use process_data_for_graphing with the new columns added
-    for combination_idx, column_name in enumerate(gene_combinations):
+    for column_name in gene_combinations:
         df_dict = {
                level1_category: adata.obs[level1_category],
                level2_category: adata.obs[level2_category],
