@@ -1,0 +1,31 @@
+Run Name: $runName
+
+<% if (success){
+    out << "## nerettilab/scrna_analysis_ml_pipeline execution completed successfully! ##"
+} else {
+    out << """####################################################
+## nerettilab/scrna_analysis_ml_pipeline execution completed unsuccessfully! ##
+####################################################
+The exit status of the task that caused the workflow execution to fail was: $exitStatus.
+The full error message was:
+
+${errorReport}
+"""
+} %>
+
+
+The workflow was completed at $dateComplete (duration: $duration)
+
+The command used to launch the workflow was as follows:
+
+  $commandLine
+
+
+
+Pipeline Configuration:
+-----------------------
+<% out << summary.collect{ k,v -> " - $k: $v" }.join("\n") %>
+
+--
+nerettilab/scrna_analysis_ml_pipeline
+https://github.com/nerettilab/scrna_analysis_ml_pipeline

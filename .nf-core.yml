@@ -1,0 +1,32 @@
+lint:
+  files_exist:
+  - CODE_OF_CONDUCT.md
+  - assets/nf-core-scrna_analysis_ml_pipeline_logo_light.png
+  - docs/images/nf-core-scrna_analysis_ml_pipeline_logo_light.png
+  - docs/images/nf-core-scrna_analysis_ml_pipeline_logo_dark.png
+  - .github/ISSUE_TEMPLATE/config.yml
+  - .github/workflows/awstest.yml
+  - .github/workflows/awsfulltest.yml
+  - conf/igenomes.config
+  files_unchanged:
+  - CODE_OF_CONDUCT.md
+  - assets/nf-core-scrna_analysis_ml_pipeline_logo_light.png
+  - docs/images/nf-core-scrna_analysis_ml_pipeline_logo_light.png
+  - docs/images/nf-core-scrna_analysis_ml_pipeline_logo_dark.png
+  - .github/ISSUE_TEMPLATE/bug_report.yml
+  multiqc_config:
+  - report_comment
+  nextflow_config:
+  - manifest.name
+  - manifest.homePage
+nf_core_version: 2.14.1
+repository_type: pipeline
+template:
+  author: Samuel Hinthorn
+  description: Pipeline to analyze scRNA datasets by gene expression and machine learning
+    predictions, incorporating metadata variables
+  name: scrna_analysis_ml_pipeline
+  prefix: nerettilab
+  skip:
+  - igenomes
+  version: 0.1.0
