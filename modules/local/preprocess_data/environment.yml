@@ -1,0 +1,12 @@
+name: preprocess_data_scrna
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - conda-forge::scanpy>=1.9.3
+  - conda-forge::scikit-learn=1.2
+  - conda-forge::pandas>=2.0.0
+  - conda-forge::scipy>=1.10
+  - pip:
+      - pyjson5==1.6.6
