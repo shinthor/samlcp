@@ -6,13 +6,13 @@ scanpy file with metadata columns added to adata.obs.
 """
 import argparse
 import pickle
-import pyjson5 as json
 import anndata
+from scipy.sparse import issparse
+from collections import namedtuple
+import pyjson5 as json
 import numpy as np
 import pandas as pd
 import scanpy as sc
-from scipy.sparse import issparse
-from collections import namedtuple
 import sensig_score
 import convert_species
 
