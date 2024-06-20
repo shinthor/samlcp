@@ -120,8 +120,6 @@ def preprocess_data(input_file_path,
     adata = anndata.read_h5ad(input_file_path)
 
     homolog_table_path = resources.homolog_table_path
-    cell_cycle_genes_path = resources.cell_cycle_genes_path
-    
     # Add the name of the dataset to the .uns attribute
     adata.uns['name'] = name_to_add
     adata.uns['sample_taxon'] = sample_taxon
@@ -208,7 +206,7 @@ def preprocess_data(input_file_path,
                     curr_series = curr_series.str.cat(criteria_name + "_lvl_" + pd.Series(bins_list, index=idx_list).astype(str).loc[curr_adata_index], sep="_")
                 elif criteria_config["type"] == "cell_cycle":
                     # Apply cell cycle-based criteria
-                    with open(cell_cycle_genes_path, encoding="utf-8") as ccgf:
+                    with open(resources.cell_cycle_genes_path, encoding="utf-8") as ccgf:
                         cell_cycle_genes = [x.strip() for x in ccgf]
                     s_genes = cell_cycle_genes[:43]
                     g2m_genes = cell_cycle_genes[43:]
@@ -230,7 +228,7 @@ def preprocess_data(input_file_path,
                 elif criteria_config["type"] == "sensig_score":
                     curr_adata = adata.copy()
                     curr_adata_index = curr_adata.obs.index
-                    scorer = sensig_score.gen_sensig_scorer(taxon_id=sample_taxon)
+                    scorer = sensig_score.gen_sensig_scorer(sensig_params=criteria_config["params"])
                     sensig_scores = scorer.sensig_score(curr_adata)
                     unique_col2_vals = curr_adata.obs[column2].unique()
                     idx_list = []
@@ -248,12 +246,8 @@ def preprocess_data(input_file_path,
                 elif criteria_config["type"] == "comparative_score":
                     curr_adata = adata.copy()
                     curr_adata_index = curr_adata.obs.index
-                    if "comparison_name" in criteria_config:
-                        scorer = sensig_score.gen_comparative_scorer(taxon_id=sample_taxon, comparison_name=criteria_config["comparison_name"])
-                        name_base = "{}_score".format(criteria_config["comparison_name"])
-                    else:
-                        scorer = sensig_score.gen_comparative_scorer(taxon_id=sample_taxon)
-                        name_base = "paracrine_score"
+                    scorer = sensig_score.gen_comparative_scorer(scorer_main_params=criteria_config["main_params"], scorer_competitor_params=criteria_config["competitor_params"])
+                    name_base = criteria_config["main_params"]["new_score_column"]
                     sensig_scores = scorer.sensig_score(curr_adata)
                     unique_col2_vals = curr_adata.obs[column2].unique()
                     idx_list = []
