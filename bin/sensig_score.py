@@ -79,12 +79,17 @@ class ComparativeScorer(SensigScorer):
         new_index = opposite_sign_index.union(non_overlap_index)
         self.sensig_sign = self.sensig_sign.loc[new_index]
 
-def gen_sensig_scorer(sensig_params: Dict[str, str]):
+def gen_sensig_scorer(sensig_params: Dict[str, str]) -> SensigScorer:
     sensig_df = pd.read_csv(sensig_params["filepath"], sep="\t")
-    return SensigScorer(sensig_df, threshold=sensig_params["threshold"], filter_column=sensig_params["filter_column"], gene_symbol_column=sensig_params["gene_symbol_column"])
+    return SensigScorer(sensig_df,
+                        threshold=sensig_params["threshold"],
+                        filter_column=sensig_params["filter_column"],
+                        gene_symbol_column=sensig_params["gene_symbol_column"],
+                        log_fc_column=sensig_params["log_fc_column"],
+                        adata_new_column_default=sensig_params["new_score_column"]
+                        )
 
 def gen_comparative_scorer(
-                           comparison_name: str,
                            scorer_main_params: Dict[str, str],
                            scorer_competitor_params: Dict[str, str]
                            ) -> ComparativeScorer:
@@ -103,4 +108,4 @@ def gen_comparative_scorer(
         filter_column=scorer_main_params["filter_column"],
         gene_symbol_column=scorer_main_params["gene_symbol_column"],
         log_fc_column=scorer_main_params["log_fc_column"],
-        adata_new_column_default=comparison_name)
+        adata_new_column_default=scorer_main_params["new_score_column"])
