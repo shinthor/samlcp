@@ -208,7 +208,7 @@ def preprocess_data(input_file_path,
                     curr_series = curr_series.str.cat(criteria_name + "_lvl_" + pd.Series(bins_list, index=idx_list).astype(str).loc[curr_adata_index], sep="_")
                 elif criteria_config["type"] == "cell_cycle":
                     # Apply cell cycle-based criteria
-                    with open(cell_cycle_genes_path) as ccgf:
+                    with open(cell_cycle_genes_path, encoding="utf-8") as ccgf:
                         cell_cycle_genes = [x.strip() for x in ccgf]
                     s_genes = cell_cycle_genes[:43]
                     g2m_genes = cell_cycle_genes[43:]
