@@ -1,9 +1,30 @@
+#!/usr/bin/env python
+# coding: utf-8
+"""
+This module defines classes and methods to generate "Senescence Signature scores"
+(SenSig scores) for a given single-cell RNA sequencing dataset.
+This is an implementation of the logic described in the paper:
+"Transfer learning in a biomaterial fibrosis model identifies in vivo senescence heterogeneity and contributions to vascularization and matrix production across species and diverse pathologies"
+(Cherry et al, 2023, GeroScience)
+Higher scores mean the cell is more senescence-like.
+"""
 import numpy as np
 import pandas as pd
 import anndata as ad
 from typing import Dict
 
 class SensigScorer():
+    """
+    A scorer class to generate Senescence Signature scores.
+    
+    Parameters:
+    sensig_df (pd.DataFrame): Differential expression analysis between senescent and non-senescent cells.
+    threshold (float, optional): Threshold for filtering genes. Defaults to None.
+    filter_column (str, optional): Column to filter genes. Defaults to "FDR".
+    gene_symbol_column (str, optional): Column for gene symbols. Defaults to "HGNC.symbol".
+    log_fc_column (str, optional): Column for log fold change. Defaults to "logFC".
+    adata_new_column_default (str, optional): Default column name for AnnData object. Defaults to "sensig_score".
+    """
     def __init__(self, sensig_df, threshold=None, filter_column="FDR", gene_symbol_column="HGNC.symbol", log_fc_column="logFC", adata_new_column_default="sensig_score"):
         self.log_fc_column = log_fc_column
         self.adata_new_column_default = adata_new_column_default
@@ -45,6 +66,16 @@ class SensigScorer():
         sensig_sign = self.sensig_sign.loc[all_z_scores.columns[sensig_genes_mask]]
         return sensig_z_scores.multiply(sensig_sign)
     def sensig_score(self, query_df, adata_new_column=None):
+        """
+        Calculate Senescence Signature scores for a given query dataset.
+        
+        Parameters:
+        query_df (pd.DataFrame): Query dataset to calculate Senescence Signature scores.
+        adata_new_column (str, optional): Column name for AnnData object. Defaults to None.
+        
+        Returns:
+        pd.Series: Senescence Signature scores.
+        """
         is_adata = False
         query_adata = None
         if isinstance(query_df, ad.AnnData):
@@ -66,6 +97,18 @@ class SensigScorer():
         return sensig_score
 
 class ComparativeScorer(SensigScorer):
+    """
+    A comparative scorer class to generate Senescence Signature scores relative to another signature.
+    
+    Parameters:
+    sensig_df (pd.DataFrame): Differential expression analysis between senescent and non-senescent cells.
+    competitor_scorer (SensigScorer): Another Senescence Signature scorer to compare with.
+    threshold (float, optional): Threshold for filtering genes. Defaults to None.
+    filter_column (str, optional): Column to filter genes. Defaults to "FDR".
+    gene_symbol_column (str, optional): Column for gene symbols. Defaults to "HGNC.symbol".
+    log_fc_column (str, optional): Column for log fold change. Defaults to "logFC".
+    adata_new_column_default (str, optional): Default column name for AnnData object. Defaults to "notch_score".
+    """
     def __init__(self, sensig_df, competitor_scorer: SensigScorer, threshold=None, filter_column="FDR", gene_symbol_column="HGNC.symbol", log_fc_column="logFC", adata_new_column_default="notch_score"):
         super().__init__(sensig_df, threshold=threshold, filter_column=filter_column, gene_symbol_column=gene_symbol_column, log_fc_column=log_fc_column, adata_new_column_default=adata_new_column_default)
         # Remove the score for genes that are in the competitor_scorer.sensig_sign with the same sign
