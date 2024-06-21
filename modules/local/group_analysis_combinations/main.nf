@@ -19,8 +19,8 @@ process ADD_GENE_COMBINATIONS {
     ${workflow.projectDir}/bin/group_analysis_combinations.py \
     --input_path=$processed_data_file \
     --output_path_base="." \
-    --uns_name="${params.uns_name}" \
-    --level1_category="${params.column1}" \
-    --level2_category="${params.column2}"
+    --uns_name="${uns_name}" \
+    --level1_category="${column1}" \
+    --level2_category="${column2}"
     """
 }
