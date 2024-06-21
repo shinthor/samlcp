@@ -34,9 +34,35 @@ workflow SCRNA_ANALYSIS_ML_PIPELINE {
     homolog_table_path = Channel.of("${workflow.projectDir}/resources/HOM_MouseHumanSequence.rpt")
     cell_cycle_genes_path = Channel.of("${workflow.projectDir}/resources/regev_lab_cell_cycle_genes.txt")
 
-
     // RUN PREPROCESS_DATA
-    
+    PREPROCESS_DATA(
+        ch_folder_paths,
+        params.threshold_combinations,
+        params.uns_name,
+        params.sample_taxon,
+        params.column2,
+        homolog_table_path,
+        cell_cycle_genes_path,
+        params.use_raw,
+        params.var_colname,
+        params.layer_name
+        )
+
+    // RUN GROUP_ANALYSIS_COMBINATIONS
+    GROUP_ANALYSIS_COMBINATIONS(
+        PREPROCESS_DATA.out, 
+        params.uns_name,
+        params.column1,
+        params.column2
+        )
+
+    // RUN CREATE_PIES
+    CREATE_PIES(
+        GROUP_ANALYSIS_COMBINATIONS.out,
+        params.uns_name,
+        params.column1,
+        params.column2
+        )
 
     // Collate and save software versions
     //
