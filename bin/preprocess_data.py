@@ -292,7 +292,7 @@ if __name__ == '__main__':
     parser.add_argument('--layer-name', type=str, default=None, help='layer name to use for data')
     args = parser.parse_args()
     
-    with open(args.threshold_combination, encoding="utf-8") as f:
+    with open(args.threshold_combinations, encoding="utf-8") as f:
         threshold_combinations = json.load(f)
     
     Resources = namedtuple('Resources', ['homolog_table_path', 'cell_cycle_genes_path'])
