@@ -1,4 +1,4 @@
-process CREATE_PIE_CHARTS {
+process CREATE_PIES {
     label "process_low"
     conda "${moduleDir}/environment.yml"
 

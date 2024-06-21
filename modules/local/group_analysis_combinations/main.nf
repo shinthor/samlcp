@@ -1,4 +1,4 @@
-process ADD_GENE_COMBINATIONS {
+process GROUP_ANALYSIS_COMBINATIONS {
     label "process_medium"
     label "process_high_memory"
     conda "${moduleDir}/environment.yml"
