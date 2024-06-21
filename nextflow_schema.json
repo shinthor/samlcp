@@ -263,17 +263,62 @@
             "properties": {
                 "column1": {
                     "type": "string",
-                    "default": "age",
                     "description": "The first category to group by. Generally a phenotype-related variable, such as age.",
                     "fa_icon": "fas fa-indent",
                     "help_text": "The first category to group by. Generally a phenotype-related variable, such as age."
                 },
                 "column2": {
                     "type": "string",
-                    "default": "sex",
                     "description": "The second category to group by. Generally a categorical variable like tissue or cell type",
                     "fa_icon": "fas fa-indent",
                     "help_text": "The second category to group by. Generally a categorical variable like tissue or cell type"
+                },
+                "threshold_combinations": {
+                    "type": "string",
+                        "description": "Threshold combinations file path giving analysis features to analyze.",
+                        "fa_icon": "fas fa-file"
+                },
+                "uns_name": {
+                    "type": "string",
+                    "description": "Unstructured data name",
+                    "default": "analyzed_data",
+                    "fa_icon": "fas fa-tag"
+                },
+                "sample_taxon": {
+                    "type": "integer",
+                    "description": "Sample taxon ID",
+                    "default": 9606,
+                    "fa_icon": "fas fa-otu"
+                },
+                "use_raw": {
+                    "type": "string",
+                    "description": "Use adata.raw for analysis (if present). Pipeline works better with raw counts to start",
+                    "default": "",
+                    "fa_icon": "fas fa-check-square"
+                },
+                "var_colname": {
+                    "type": "string",
+                    "description": "Column name in adata.vars to use for variable names for analyzing",
+                    "default": "",
+                    "fa_icon": "fas fa-column"
+                },
+                "layer_name": {
+                    "type": "string",
+                    "description": "Layer name to use for analyzing. Pipeline works better with raw counts to start",
+                    "default": "",
+                    "fa_icon": "fas fa-layer-group"
+                },
+                "minimal_genes": {
+                    "type": "boolean",
+                    "description": "Whether to first subset adata to Minimal gene set necessary for analysis. Default false.",
+                    "default": false,
+                    "fa_icon": "fas fa-gene"
+                },
+                "random_sample_proportion": {
+                    "type": "number",
+                    "description": "Random sample proportion for downsampling cells",
+                    "default": 1,
+                    "fa_icon": "fas fa-random"
                 }
             }
         }  
