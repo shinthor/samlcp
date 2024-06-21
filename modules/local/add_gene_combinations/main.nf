@@ -16,7 +16,7 @@ process ADD_GENE_COMBINATIONS {
     script:
     """
     python \
-    ${workflow.projectDir}/bin/add_gene_combinations.py \
+    ${workflow.projectDir}/bin/group_analysis_combinations.py \
     --input_path=$processed_data_file \
     --output_path_base="." \
     --uns_name="${params.uns_name}" \
