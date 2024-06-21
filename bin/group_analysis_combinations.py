@@ -1,29 +1,33 @@
 #!/usr/bin/env python
 # coding: utf-8
 """
-This script processes data for graphing and saves the results to a tsv file.
+Add gene combinations from an AnnData object and prepare data for graphing.
+
+This script takes an AnnData object as input, takes gene combinations based on column names,
+and prepares data for graphing by calculating proportions of each level3 category for each
+combination of level1 category and level2 category.
+
+The resulting dataframes are saved as TSV files and can be used for graphing in a separate script.
 """
-import os
 import argparse
+import os
 import pandas as pd
 import scanpy as sc
 
-def process_data_for_graphing(graph_df: pd.DataFrame, level1_category: str, level2_category: str,
-                               level3_category: str) -> pd.DataFrame:
+
+def process_data_for_graphing(graph_df: pd.DataFrame,
+                              level1_category: str = "Age",
+                              level2_category: str = "Cell Type",
+                               level3_category: str = "Predicted Senescence Class") -> pd.DataFrame:
     """
     Groups data by level1_category, level2_category, level3_category and returns a dataframe with the counts of each
     level2_category and level3_category to be used for plotting a 3 category grid of pie charts.
-    Input:
-        graph_df: a dataframe with the data to be processed
-        level1_category: the first category to group by
-        level2_category: the second category to group by
-        level3_category: the third category to group bye_df.to_csv(output_file, sep="\t", index=False)
-    Output:
-        graph_df_unique_counts: a dataframe with the counts of each level2_category and level3_category
     """
     # Calculate unique counts for each combination of level1_category, level2_category, and level3_category
     graph_df_unique_counts = graph_df.groupby(
         [level1_category, level2_category, level3_category]).size().reset_index().rename(columns={0: "count"})
+    print("graph_df_unique_counts")
+    print(graph_df_unique_counts.head())
     # Calculate the proportion of each level2_category for each level1_category
     count_age_celltype_df = graph_df.groupby([level1_category, level2_category]).agg(
         {level2_category: "count"}).rename(columns={level2_category: "Count"}).reset_index()
@@ -32,13 +36,15 @@ def process_data_for_graphing(graph_df: pd.DataFrame, level1_category: str, leve
                                                                                         level1_category,
                                                                                         axis="index")[
                                                                                         "Count"].transform("sum")
+    print("count_age_celltype_df")
+    print(count_age_celltype_df.head())
     # Set multiindex for count_age_celltype_df
     multiindex = pd.MultiIndex.from_frame(count_age_celltype_df[[level1_category, level2_category]])
     count_age_celltype_df = count_age_celltype_df.drop(columns=[level1_category, level2_category]).set_index(multiindex)
 
     # Set multiindex for graph_df_unique_counts
     multiindex_main_grouper = pd.MultiIndex.from_frame(
-                graph_df_unique_counts[[level1_category, level2_category, level3_category]])
+        graph_df_unique_counts[[level1_category, level2_category, level3_category]])
     graph_df_unique_counts = graph_df_unique_counts.drop(
         columns=[level1_category, level2_category, level3_category]).set_index(multiindex_main_grouper)
     graph_df_unique_counts["Proportion_{1}_Per_{0}".format(level1_category, level2_category)]  = count_age_celltype_df["Proportion_{1}_Per_{0}".format(level1_category, level2_category)] 
@@ -52,20 +58,17 @@ def process_data_for_graphing(graph_df: pd.DataFrame, level1_category: str, leve
     return graph_df_unique_counts
 
 def age_column_transform(age: str) -> int:
-    """
-    Converts age column to an integer.
-    """
-    # Find number in string and return it as an int
+    """Find number in string and return it as an int"""
     return int("".join(filter(str.isdigit, age)))
-
 def main(adata: sc.AnnData,
          output_path_base: str,
-         level1_category: str,
-         level2_category: str,
-         name_to_add: str,
-         colnamestart: str = "combination_",):
+         colnamestart: str="combination_",
+         level1_category: str = "age",
+         level2_category: str = "cell_ontology_class",
+         name_to_add: str = "Tabula"):
     """
-    Main function for generating the tables for graphing of the gene combinations.
+    Create dataframes with the proportion of each level3_category for each combination of level1_category and level2_category,
+    useful for graphing in a separate script.
     """
     # Define gene combinations based on the column names added during preprocessing
     gene_combinations = [col for col in adata.obs.columns if col.startswith(colnamestart)]
@@ -86,13 +89,19 @@ def main(adata: sc.AnnData,
         )
 
 if __name__ == "__main__":
+    # Args from nextflow are $processed_data "${params.output_dir}/${input_file_name}/gene_combinations/${input_file_name}_"
     parser = argparse.ArgumentParser()
-    parser.add_argument("input_path", help="Path to the input file")
-    parser.add_argument("output_path_base", help="Base path for output files")
-    parser.add_argument("uns_name", help="Name to add to output files")
-    parser.add_argument("level1_category", help="Level 1 category")
-    parser.add_argument("level2_category", help="Level 2 category")
+    parser.add_argument("--input_path", help="Path to the input file")
+    parser.add_argument("--output_path_base", help="Base path for output files")
+    parser.add_argument("--uns_name", help="Name to add to output files")
+    parser.add_argument("--level1_category", help="Level 1 category for graphing")
+    parser.add_argument("--level2_category", help="Level 2 category for graphing")
     args = parser.parse_args()
+
+    adata = sc.read_h5ad(args.input_path)
+    output_path_base = args.output_path_base
+    uns_name = args.uns_name
+    level1_category = args.level1_category
+    level2_category = args.level2_category
     # Load the AnnData object from the output of the preprocessing step
-    adata_input = sc.read_h5ad(args.input_path)
-    main(adata_input, args.output_path_base, level1_category = args.level1_category, level2_category=args.level2_category, name_to_add=args.uns_name)
+    main(adata, output_path_base, level1_category = level1_category, level2_category=level2_category, name_to_add=uns_name)
