@@ -4,7 +4,7 @@ process PREPROCESS_DATA {
     conda "${moduleDir}/environment.yml"
 
     input:
-    path(original_input_file)
+    val(original_input_file)
     val(threshold_combinations)
     val(uns_name)
     val(sample_taxon)
