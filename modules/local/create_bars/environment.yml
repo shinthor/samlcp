@@ -1,0 +1,8 @@
+name: create_bars_scrna
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - conda-forge::r-ggplot2=3.5.1
+  - conda-forge::r-stringr=1.5.1

@@ -12,6 +12,8 @@ include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_scrn
 include { PREPROCESS_DATA        } from '../modules/local/preprocess_data'
 include { GROUP_ANALYSIS_COMBINATIONS } from  '../modules/local/group_analysis_combinations'
 include { CREATE_PIES            } from '../modules/local/create_pies'
+include { CREATE_BARS            } from '../modules/local/create_bars'
+
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -63,6 +65,14 @@ workflow SCRNA_ANALYSIS_ML_PIPELINE {
         params.column1,
         params.column2
         )
+    
+    CREATE_BARS(
+        GROUP_ANALYSIS_COMBINATIONS.out.flatten(),
+        params.uns_name,
+        params.column1,
+        params.column2
+        )
+
 
     // Collate and save software versions
     //
