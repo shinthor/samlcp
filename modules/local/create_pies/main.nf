@@ -15,7 +15,7 @@ process CREATE_PIES {
     """
     Rscript \
     ${workflow.projectDir}/bin/create_pie_charts.R \
-    $gene_combination \
+    $processed_data_file \
     "${uns_name}" \
     "${column1}" \
     "${column2}" \

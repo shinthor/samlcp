@@ -58,7 +58,7 @@ workflow SCRNA_ANALYSIS_ML_PIPELINE {
 
     // RUN CREATE_PIES
     CREATE_PIES(
-        GROUP_ANALYSIS_COMBINATIONS.out,
+        GROUP_ANALYSIS_COMBINATIONS.out.flatten(),
         params.uns_name,
         params.column1,
         params.column2
