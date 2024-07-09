@@ -142,6 +142,7 @@ def preprocess_data(input_file_path,
     
     # Filter the threshold combinations based on the input data
     filtered_combinations = filter_threshold_combinations(threshold_combinations, adata, var_colname)
+
     # Ensure the data is dense and has unique gene names
     if issparse(adata.X):
         adata.X = np.asarray(adata.X.todense())
@@ -157,14 +158,35 @@ def preprocess_data(input_file_path,
         adata.X[:, gene_idx] = avg_expr[:, np.newaxis]
     adata = adata[:, ~duplicated_minus_first]
     
-    adata.layers["counts_pipe"] = adata.X
+    adata.layers["counts_pipe"] = adata.X.copy()
     sc.pp.normalize_total(adata, target_sum=1e4)
-    adata.layers["norm_pipe"] = adata.X
-    sc.pp.log1p(adata, base=2)
-    adata.layers["log_pipe"] = adata.X
-    sc.pp.scale(adata)
-    adata.layers["scale_pipe"] = adata.X
+    adata.layers["norm_pipe"] = adata.X.copy()
+    # sc.pp.log1p(adata, base=2)
+    # adata.layers["log_pipe"] = adata.X.copy()
+    # sc.pp.scale(adata)
+    # adata.layers["scale_pipe"] = adata.X.copy()
 
+    # Generate the cell cycle scores ahead of time
+    # adata.X = adata.layers["norm_pipe"].copy()
+    sc.pp.log1p(adata, base=10)
+    sc.pp.scale(adata)
+    with open(resources.cell_cycle_genes_path, encoding="utf-8") as ccgf:
+        cell_cycle_genes = [x.strip() for x in ccgf]
+    s_genes = cell_cycle_genes[:43]
+    g2m_genes = cell_cycle_genes[43:]
+    if sample_taxon == 10090:
+        # Convert human cell cycle genes to mouse cell cycle genes
+        homolog_table = pd.read_csv(homolog_table_path, sep="\t")
+        id2symbols, _, _ = convert_species.get_id2symbols_dict(homolog_table)
+        compatible_genes, _ = convert_species.get_compatible_genes(id2symbols)
+        s_genes = [compatible_genes[x][0] for x in s_genes if x in compatible_genes]
+        g2m_genes = [compatible_genes[x][0] for x in g2m_genes if x in compatible_genes]
+    s_genes = [x for x in s_genes if x in adata.var_names]
+    g2m_genes = [x for x in g2m_genes if x in adata.var_names]
+    sc.tl.score_genes_cell_cycle(adata, s_genes=s_genes, g2m_genes=g2m_genes)
+
+    # Restore counts to adata.X
+    adata.X = adata.layers["counts_pipe"].copy()
 
     # Iterate over the threshold combinations
     adata_df = adata.to_df()
@@ -184,7 +206,7 @@ def preprocess_data(input_file_path,
                     # Apply bin-based criteria
                     curr_adata = adata
                     curr_adata_index = curr_adata.obs.index
-                    sc.pp.normalize_total(curr_adata, target_sum=1e4)
+                    curr_adata.X = curr_adata.layers["norm_pipe"].copy()
                     unique_col2_vals = curr_adata.obs[column2].unique()
                     gene_subset = curr_adata[:, criteria_config["gene"]]
                     idx_list = []
@@ -205,31 +227,12 @@ def preprocess_data(input_file_path,
                         idx_list += list(curr_col2_subset_idx)
                     curr_series = curr_series.str.cat(criteria_name + "_lvl_" + pd.Series(bins_list, index=idx_list).astype(str).loc[curr_adata_index], sep="_")
                 elif criteria_config["type"] == "cell_cycle":
-                    # Apply cell cycle-based criteria
-                    with open(resources.cell_cycle_genes_path, encoding="utf-8") as ccgf:
-                        cell_cycle_genes = [x.strip() for x in ccgf]
-                    s_genes = cell_cycle_genes[:43]
-                    g2m_genes = cell_cycle_genes[43:]
-                    if sample_taxon == 10090:
-                        # Convert human cell cycle genes to mouse cell cycle genes
-                        homolog_table = pd.read_csv(homolog_table_path, sep="\t")
-                        id2symbols, _, _ = convert_species.get_id2symbols_dict(homolog_table)
-                        compatible_genes, reverse_translate_dict = convert_species.get_compatible_genes(id2symbols)
-                        s_genes = [compatible_genes[x][0] for x in s_genes if x in compatible_genes]
-                        g2m_genes = [compatible_genes[x][0] for x in g2m_genes if x in compatible_genes]
-                    s_genes = [x for x in s_genes if x in adata.var_names]
-                    g2m_genes = [x for x in g2m_genes if x in adata.var_names]
-                    adata_copy = adata.copy()
-                    sc.pp.normalize_total(adata_copy, target_sum=1e4)
-                    sc.pp.log1p(adata_copy, base=2)
-                    sc.pp.scale(adata_copy)
-                    sc.tl.score_genes_cell_cycle(adata_copy, s_genes=s_genes, g2m_genes=g2m_genes)
-                    curr_series = curr_series.str.cat(adata_copy.obs["phase"].astype(str), sep="_")
+                    curr_series = curr_series.str.cat(adata.obs["phase"].astype(str), sep="_")
                 elif criteria_config["type"] == "sensig_score":
-                    curr_adata = adata.copy()
+                    curr_adata = adata
                     curr_adata_index = curr_adata.obs.index
                     scorer = sensig_score.gen_sensig_scorer(sensig_params=criteria_config["params"])
-                    sensig_scores = scorer.sensig_score(curr_adata)
+                    scorer.sensig_score(curr_adata)
                     unique_col2_vals = curr_adata.obs[column2].unique()
                     idx_list = []
                     bins_list = []
@@ -244,7 +247,7 @@ def preprocess_data(input_file_path,
                         idx_list += list(curr_col2_subset_idx)
                     curr_series = curr_series.str.cat("sensig_score" + pd.Series(bins_list, index=idx_list).astype(str).loc[curr_adata_index], sep="_")
                 elif criteria_config["type"] == "comparative_score":
-                    curr_adata = adata.copy()
+                    curr_adata = adata
                     curr_adata_index = curr_adata.obs.index
                     scorer = sensig_score.gen_comparative_scorer(scorer_main_params=criteria_config["main_params"], scorer_competitor_params=criteria_config["competitor_params"])
                     name_base = criteria_config["main_params"]["new_score_column"]
@@ -293,16 +296,16 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     with open(args.threshold_combinations, encoding="utf-8") as f:
-        threshold_combinations = json.load(f)
+        threshold_combinations_dict = json.load(f)
     
     Resources = namedtuple('Resources', ['homolog_table_path', 'cell_cycle_genes_path'])
-    resources = Resources(args.homolog_table_path, args.cell_cycle_genes_path)
+    gene_resources = Resources(args.homolog_table_path, args.cell_cycle_genes_path)
     preprocess_data(args.input_file,
                     args.output_file,
-                    threshold_combinations,
+                    threshold_combinations_dict,
                     args.name_to_add,
                     args.sample_taxon,
-                    resources,
+                    gene_resources,
                     args.column2,
                     use_raw=args.use_raw,
                     var_colname=args.var_colname,
