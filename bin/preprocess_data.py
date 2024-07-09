@@ -251,7 +251,7 @@ def preprocess_data(input_file_path,
                     curr_adata_index = curr_adata.obs.index
                     scorer = sensig_score.gen_comparative_scorer(scorer_main_params=criteria_config["main_params"], scorer_competitor_params=criteria_config["competitor_params"])
                     name_base = criteria_config["main_params"]["new_score_column"]
-                    sensig_scores = scorer.sensig_score(curr_adata)
+                    scorer.sensig_score(curr_adata)
                     unique_col2_vals = curr_adata.obs[column2].unique()
                     idx_list = []
                     bins_list = []
