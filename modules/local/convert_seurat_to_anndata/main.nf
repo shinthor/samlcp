@@ -1,4 +1,4 @@
-process CONVERT_SEURAT_TO_ADATA{
+process CONVERT_SEURAT_TO_ANNDATA{
     label "process_low"
     label "process_high_memory"
     conda "${moduleDir}/environment.yml"
@@ -12,7 +12,7 @@ process CONVERT_SEURAT_TO_ADATA{
     script:
     """
     Rscript \
-    '${moduleDir}/convert_seurat_adata_sceasy.R' \
+    '${moduleDir}/convert_seurat_anndata_sceasy.R' \
     '${original_input_file}'
     """
 }
