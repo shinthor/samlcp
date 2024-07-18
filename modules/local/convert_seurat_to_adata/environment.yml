@@ -1,0 +1,11 @@
+name: sceasy_nextflow
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - bioconda::r-sceasy=0.0.7
+  - conda-forge::r-seurat=5.1.0
+  - conda-forge::r-seuratobject=5.0.2
+  - conda-forge::anndata=0.9.1
+  - conda-forge::pandas=1.5.3
