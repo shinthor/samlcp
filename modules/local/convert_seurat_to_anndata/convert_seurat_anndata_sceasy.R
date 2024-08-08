@@ -22,6 +22,7 @@ if (object_ver$major > 4) {
         from="seurat",
         to="anndata",
         main_layer="counts",
+        drop_single_values=FALSE,
         outFile=paste0(input_file_name, ".h5ad"))
 } else {
     sceasy::convertFormat(
@@ -30,5 +31,6 @@ if (object_ver$major > 4) {
         from="seurat",
         to="anndata",
         main_layer="counts",
+        drop_single_values=FALSE,
         outFile=paste0(input_file_name, ".h5ad"))
 }

@@ -13,7 +13,7 @@ include { PREPROCESS_DATA        } from '../modules/local/preprocess_data'
 include { GROUP_ANALYSIS_COMBINATIONS } from  '../modules/local/group_analysis_combinations'
 include { CREATE_PIES            } from '../modules/local/create_pies'
 include { CREATE_BARS            } from '../modules/local/create_bars'
-
+include { CONVERT_SEURAT_TO_ANNDATA } from '../modules/local/convert_seurat_to_anndata'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -32,6 +32,13 @@ workflow SCRNA_ANALYSIS_ML_PIPELINE {
     ch_multiqc_files = Channel.empty()
 
     ch_folder_paths = ch_samplesheet.map { it[1] }
+    print("Folder paths before: ${ch_folder_paths.collect()}")
+    // Convert Seurat to AnnData for RDS files
+    if (params.seurat_input) {
+        CONVERT_SEURAT_TO_ANNDATA(ch_folder_paths)
+        ch_folder_paths = CONVERT_SEURAT_TO_ANNDATA.out
+    }
+    print("Folder paths: ${ch_folder_paths.collect()}")
 
     homolog_table_path = Channel.of("${workflow.projectDir}/resources/HOM_MouseHumanSequence.rpt")
     cell_cycle_genes_path = Channel.of("${workflow.projectDir}/resources/regev_lab_cell_cycle_genes.txt")
