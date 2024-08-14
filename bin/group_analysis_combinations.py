@@ -75,11 +75,14 @@ def main(adata: sc.AnnData,
 
     # Use process_data_for_graphing with the new columns added
     for column_name in gene_combinations:
+        curr_obs = adata.obs
+        # Add mask to drop rows where curr_obs[column_name] is null
+        obs_mask = adata.obs[column_name].notnull()
         df_dict = {
-               level1_category: adata.obs[level1_category],
-               level2_category: adata.obs[level2_category],
-               column_name[len(colnamestart):]: adata.obs[column_name]
-            }
+            level1_category: curr_obs[level1_category][obs_mask],
+            level2_category: curr_obs[level2_category][obs_mask],
+            column_name[len(colnamestart):]: curr_obs[column_name][obs_mask]
+        }
         if level1_category == "age" or level1_category == "development_stage":
             df_dict[level1_category] = df_dict[level1_category].apply(age_column_transform)
         out_df = process_data_for_graphing(pd.DataFrame(df_dict), level1_category=level1_category, level2_category=level2_category, level3_category=column_name[len(colnamestart):])

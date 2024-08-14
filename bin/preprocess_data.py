@@ -85,8 +85,7 @@ def filter_threshold_combinations(threshold_combinations, adata, var_colname=Non
         list: Filtered threshold combinations.
     """
     filtered_combinations = []  # Initialize an empty list to store filtered combinations
-    for _, combination_group in enumerate(threshold_combinations):  # Iterate over each combination group
-        for criteria in combination_group:  # Iterate over each criteria in the combination group
+    for criteria in threshold_combinations:  # Iterate over each combination group
             for criteria_name, criteria_config in criteria.items():  # Iterate over each criteria config
                 if criteria_config["type"] in {"gene", "bins"}:  # Check if the criteria type is "gene" or "bins"
                     if criteria_config["type"] == "gene":
@@ -99,8 +98,11 @@ def filter_threshold_combinations(threshold_combinations, adata, var_colname=Non
                     if var_colname and gene not in adata.var[var_colname]:  # Check if gene is not in adata var column if var_colname is provided
                         print(f"Warning: gene {gene} not found in the input data, skipping")  # Print a warning if gene is not found
                         continue  # Skip to the next iteration without including the combination group
-                    else:
-                        filtered_combinations.append(combination_group)  # Append the combination group to the filtered combinations if no genes were skipped
+                    filtered_combinations.append(criteria)  # Append the combination group to the filtered combinations if no genes were skipped
+                # May want to add checks for other types here
+                else:
+                    filtered_combinations.append(criteria)
+                     
 
     return filtered_combinations  # Return the filtered threshold combinations
 
@@ -190,82 +192,90 @@ def preprocess_data(input_file_path,
 
     # Iterate over the threshold combinations
     adata_df = adata.to_df()
-    for _, combination_group in enumerate(filtered_combinations):
+    original_adata = adata
+    for criteria in filtered_combinations:
         # Generate a column name based on the combination and the criteria name
         column_name = f"{colnamestart}"
         curr_series = pd.Series("", index=adata_df.index, dtype=str)
-        for criteria in combination_group:
-            for criteria_name, criteria_config in criteria.items():
-                if criteria_config["type"] == "gene":
-                    # Apply gene-based criteria
-                    curr_series = curr_series.str.cat((adata_df[criteria_name] > criteria_config["threshold"]).map({True: f"{criteria_name}_pos", False: f"{criteria_name}_neg"}), sep="_")
-                elif criteria_config["type"] == "model":
-                    # Apply model-based criteria
-                    curr_series = curr_series.str.cat(apply_model(adata, criteria_config, homolog_table_path=homolog_table_path), sep="_")
-                elif criteria_config["type"] == "bins":
-                    # Apply bin-based criteria
-                    curr_adata = adata
-                    curr_adata_index = curr_adata.obs.index
-                    curr_adata.X = curr_adata.layers["norm_pipe"].copy()
-                    unique_col2_vals = curr_adata.obs[column2].unique()
-                    gene_subset = curr_adata[:, criteria_config["gene"]]
-                    idx_list = []
-                    bins_list = []
-                    for curr_col2_val in unique_col2_vals:
-                        curr_col2_subset = gene_subset[gene_subset.obs[column2] == curr_col2_val]
-                        curr_col2_subset_idx = curr_col2_subset.obs.index
-                        curr_exp = curr_col2_subset.X.flatten()
-                        upper_val = np.percentile(curr_exp, criteria_config["upper_limit_percentile"])
-                        if upper_val == 0:
-                            upper_val = np.max(curr_exp)
-                        lower_val = np.percentile(curr_exp, criteria_config["lower_limit_percentile"])
-                        if lower_val == 0 and upper_val > 0:
-                            lower_val = np.min(curr_exp[np.nonzero(curr_exp)])
-                        bin_edges = np.linspace(lower_val, upper_val, criteria_config["num_bins"])
-                        curr_bins = np.digitize(curr_exp, bin_edges)
-                        bins_list += list(curr_bins)
-                        idx_list += list(curr_col2_subset_idx)
-                    curr_series = curr_series.str.cat(criteria_name + "_lvl_" + pd.Series(bins_list, index=idx_list).astype(str).loc[curr_adata_index], sep="_")
-                elif criteria_config["type"] == "cell_cycle":
-                    curr_series = curr_series.str.cat(adata.obs["phase"].astype(str), sep="_")
-                elif criteria_config["type"] == "sensig_score":
-                    curr_adata = adata
-                    curr_adata_index = curr_adata.obs.index
-                    scorer = sensig_score.gen_sensig_scorer(sensig_params=criteria_config["params"])
-                    scorer.sensig_score(curr_adata)
-                    unique_col2_vals = curr_adata.obs[column2].unique()
-                    idx_list = []
-                    bins_list = []
-                    for curr_col2_val in unique_col2_vals:
-                        curr_col2_subset = curr_adata[curr_adata.obs[column2] == curr_col2_val]
-                        curr_col2_subset_idx = curr_col2_subset.obs.index
-                        lower_val = np.percentile(curr_col2_subset.obs["sensig_score"], criteria_config["lower_limit_percentile"])
-                        upper_val = np.percentile(curr_col2_subset.obs["sensig_score"], criteria_config["upper_limit_percentile"])
-                        bin_edges = np.linspace(lower_val, upper_val, criteria_config["num_bins"])
-                        curr_bins = np.digitize(curr_col2_subset.obs["sensig_score"], bin_edges)
-                        bins_list += list(curr_bins)
-                        idx_list += list(curr_col2_subset_idx)
-                    curr_series = curr_series.str.cat("sensig_score" + pd.Series(bins_list, index=idx_list).astype(str).loc[curr_adata_index], sep="_")
-                elif criteria_config["type"] == "comparative_score":
-                    curr_adata = adata
-                    curr_adata_index = curr_adata.obs.index
-                    scorer = sensig_score.gen_comparative_scorer(scorer_main_params=criteria_config["main_params"], scorer_competitor_params=criteria_config["competitor_params"])
-                    name_base = criteria_config["main_params"]["new_score_column"]
-                    scorer.sensig_score(curr_adata)
-                    unique_col2_vals = curr_adata.obs[column2].unique()
-                    idx_list = []
-                    bins_list = []
-                    for curr_col2_val in unique_col2_vals:
-                        curr_col2_subset = curr_adata[curr_adata.obs[column2] == curr_col2_val]
-                        curr_col2_subset_idx = curr_col2_subset.obs.index
-                        lower_val = np.percentile(curr_col2_subset.obs[name_base], criteria_config["lower_limit_percentile"])
-                        upper_val = np.percentile(curr_col2_subset.obs[name_base], criteria_config["upper_limit_percentile"])
-                        bin_edges = np.linspace(lower_val, upper_val, criteria_config["num_bins"])
-                        curr_bins = np.digitize(curr_col2_subset.obs[name_base], bin_edges)
-                        bins_list += list(curr_bins)
-                        idx_list += list(curr_col2_subset_idx)
-                    curr_series = curr_series.str.cat(name_base + pd.Series(bins_list, index=idx_list).astype(str).loc[curr_adata_index], sep="_")
-                column_name += f"_{criteria_name}"
+        adata = original_adata
+        for criteria_name, criteria_config in criteria.items():
+            if criteria_config["type"] == "gene":
+                # Apply gene-based criteria
+                curr_series = curr_series.str.cat((adata_df[criteria_name] > criteria_config["threshold"]).map({True: f"{criteria_name}_pos", False: f"{criteria_name}_neg"}), sep="_")
+            elif criteria_config["type"] == "model":
+                # Apply model-based criteria
+                curr_series = curr_series.str.cat(apply_model(adata, criteria_config, homolog_table_path=homolog_table_path), sep="_")
+
+            elif criteria_config["type"] == "model_select":
+                # Apply model-based criteria
+                model_predictions = apply_model(adata, criteria_config, homolog_table_path=homolog_table_path)
+                # Use the predictions to keep only the specified classes and set the rest to NaN.
+                model_predictions = model_predictions.map({x: "" for x in criteria_config["keep_classes"]})
+                curr_series = curr_series.str.cat(model_predictions, sep="_")
+            elif criteria_config["type"] == "bins":
+                # Apply bin-based criteria
+                curr_adata = adata
+                curr_adata_index = curr_adata.obs.index
+                curr_adata.X = curr_adata.layers["norm_pipe"].copy()
+                unique_col2_vals = curr_adata.obs[column2].unique()
+                gene_subset = curr_adata[:, criteria_config["gene"]]
+                idx_list = []
+                bins_list = []
+                for curr_col2_val in unique_col2_vals:
+                    curr_col2_subset = gene_subset[gene_subset.obs[column2] == curr_col2_val]
+                    curr_col2_subset_idx = curr_col2_subset.obs.index
+                    curr_exp = curr_col2_subset.X.flatten()
+                    upper_val = np.percentile(curr_exp, criteria_config["upper_limit_percentile"])
+                    if upper_val == 0:
+                        upper_val = np.max(curr_exp)
+                    lower_val = np.percentile(curr_exp, criteria_config["lower_limit_percentile"])
+                    if lower_val == 0 and upper_val > 0:
+                        lower_val = np.min(curr_exp[np.nonzero(curr_exp)])
+                    bin_edges = np.linspace(lower_val, upper_val, criteria_config["num_bins"])
+                    curr_bins = np.digitize(curr_exp, bin_edges)
+                    bins_list += list(curr_bins)
+                    idx_list += list(curr_col2_subset_idx)
+                curr_series = curr_series.str.cat(criteria_name + "_lvl_" + pd.Series(bins_list, index=idx_list).astype(str).loc[curr_adata_index], sep="_")
+            elif criteria_config["type"] == "cell_cycle":
+                curr_series = curr_series.str.cat(adata.obs["phase"].astype(str), sep="_")
+            elif criteria_config["type"] == "sensig_score":
+                curr_adata = adata
+                curr_adata_index = curr_adata.obs.index
+                scorer = sensig_score.gen_sensig_scorer(sensig_params=criteria_config["params"])
+                scorer.sensig_score(curr_adata)
+                unique_col2_vals = curr_adata.obs[column2].unique()
+                idx_list = []
+                bins_list = []
+                for curr_col2_val in unique_col2_vals:
+                    curr_col2_subset = curr_adata[curr_adata.obs[column2] == curr_col2_val]
+                    curr_col2_subset_idx = curr_col2_subset.obs.index
+                    lower_val = np.percentile(curr_col2_subset.obs["sensig_score"], criteria_config["lower_limit_percentile"])
+                    upper_val = np.percentile(curr_col2_subset.obs["sensig_score"], criteria_config["upper_limit_percentile"])
+                    bin_edges = np.linspace(lower_val, upper_val, criteria_config["num_bins"])
+                    curr_bins = np.digitize(curr_col2_subset.obs["sensig_score"], bin_edges)
+                    bins_list += list(curr_bins)
+                    idx_list += list(curr_col2_subset_idx)
+                curr_series = curr_series.str.cat("sensig_score" + pd.Series(bins_list, index=idx_list).astype(str).loc[curr_adata_index], sep="_")
+            elif criteria_config["type"] == "comparative_score":
+                curr_adata = adata
+                curr_adata_index = curr_adata.obs.index
+                scorer = sensig_score.gen_comparative_scorer(scorer_main_params=criteria_config["main_params"], scorer_competitor_params=criteria_config["competitor_params"])
+                name_base = criteria_config["main_params"]["new_score_column"]
+                scorer.sensig_score(curr_adata)
+                unique_col2_vals = curr_adata.obs[column2].unique()
+                idx_list = []
+                bins_list = []
+                for curr_col2_val in unique_col2_vals:
+                    curr_col2_subset = curr_adata[curr_adata.obs[column2] == curr_col2_val]
+                    curr_col2_subset_idx = curr_col2_subset.obs.index
+                    lower_val = np.percentile(curr_col2_subset.obs[name_base], criteria_config["lower_limit_percentile"])
+                    upper_val = np.percentile(curr_col2_subset.obs[name_base], criteria_config["upper_limit_percentile"])
+                    bin_edges = np.linspace(lower_val, upper_val, criteria_config["num_bins"])
+                    curr_bins = np.digitize(curr_col2_subset.obs[name_base], bin_edges)
+                    bins_list += list(curr_bins)
+                    idx_list += list(curr_col2_subset_idx)
+                curr_series = curr_series.str.cat(name_base + pd.Series(bins_list, index=idx_list).astype(str).loc[curr_adata_index], sep="_")
+            column_name += f"_{criteria_name}"
         adata.obs[column_name] = curr_series.str.lstrip("_")
 
     # Save the modified data to the output file path
@@ -297,7 +307,6 @@ if __name__ == '__main__':
     
     with open(args.threshold_combinations, encoding="utf-8") as f:
         threshold_combinations_dict = json.load(f)
-    
     Resources = namedtuple('Resources', ['homolog_table_path', 'cell_cycle_genes_path'])
     gene_resources = Resources(args.homolog_table_path, args.cell_cycle_genes_path)
     preprocess_data(args.input_file,
