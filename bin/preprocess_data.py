@@ -95,7 +95,7 @@ def filter_threshold_combinations(threshold_combinations, adata, var_colname=Non
                     if not var_colname and gene not in adata.var_names:  # Check if gene is not in adata var names if var_colname is not provided
                         print(f"Warning: gene {gene} not found in the input data, skipping")  # Print a warning if gene is not found
                         continue  # Skip to the next iteration without including the combination group
-                    if var_colname and gene not in adata.var[var_colname]:  # Check if gene is not in adata var column if var_colname is provided
+                    if var_colname and gene not in adata.var[var_colname].astype(str):  # Check if gene is not in adata var column if var_colname is provided
                         print(f"Warning: gene {gene} not found in the input data, skipping")  # Print a warning if gene is not found
                         continue  # Skip to the next iteration without including the combination group
                     filtered_combinations.append(criteria)  # Append the combination group to the filtered combinations if no genes were skipped
@@ -137,10 +137,14 @@ def preprocess_data(input_file_path,
     # If a layer name is provided, use it to select the data layer
     if layer_name:
         adata.X = adata.layers[layer_name]
-    
     # If a variable column name is provided, use it to select the variable names
     if var_colname:
+        # Set old index to a column in the variable table
+        adata.var['old_index'] = adata.var.index
+        # Set var_colname as the new index
         adata.var_names = adata.var[var_colname].astype(str)
+        # Get rid of the new index column name to avoid name conflicts
+        adata.var.index.name = None
     
     # Filter the threshold combinations based on the input data
     filtered_combinations = filter_threshold_combinations(threshold_combinations, adata, var_colname)
@@ -169,6 +173,7 @@ def preprocess_data(input_file_path,
     # adata.layers["scale_pipe"] = adata.X.copy()
 
     # Generate the cell cycle scores ahead of time
+    
     # adata.X = adata.layers["norm_pipe"].copy()
     sc.pp.log1p(adata, base=10)
     sc.pp.scale(adata)
@@ -185,7 +190,7 @@ def preprocess_data(input_file_path,
         g2m_genes = [compatible_genes[x][0] for x in g2m_genes if x in compatible_genes]
     s_genes = [x for x in s_genes if x in adata.var_names]
     g2m_genes = [x for x in g2m_genes if x in adata.var_names]
-    sc.tl.score_genes_cell_cycle(adata, s_genes=s_genes, g2m_genes=g2m_genes)
+    sc.tl.score_genes_cell_cycle(adata, s_genes=s_genes, g2m_genes=g2m_genes, use_raw=False)
 
     # Restore counts to adata.X
     adata.X = adata.layers["counts_pipe"].copy()
@@ -280,6 +285,7 @@ def preprocess_data(input_file_path,
 
     # Save the modified data to the output file path
     if output_file_path is not None:
+        adata.var.index.name = None
         adata.write_h5ad(output_file_path)
     return adata
 
