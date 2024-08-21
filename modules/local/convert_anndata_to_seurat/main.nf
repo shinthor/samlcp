@@ -13,6 +13,7 @@ process CONVERT_ANNDATA_TO_SEURAT{
     """
     Rscript \
     '${moduleDir}/convert_anndata_seurat_sceasy.R' \
-    '${original_input_file}'
+    '${original_input_file}' \
+    \$CONDA_PREFIX
     """
 }
