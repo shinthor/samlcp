@@ -6,7 +6,6 @@ a copy of the original scanpy file with metadata columns added to adata.obs.
 """
 import argparse
 import os
-import pickle
 from collections import namedtuple
 import anndata
 from scipy.sparse import issparse
