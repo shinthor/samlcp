@@ -299,6 +299,9 @@ def preprocess_data(input_file_path,
 
 
 if __name__ == '__main__':
+    def str2bool(v):
+        """Parse boolean string arguments."""
+        return str(v).lower() in ("yes", "true", "t", "y", "1")
     parser = argparse.ArgumentParser(description='Process some data.')
     parser.add_argument('--input-file', type=str, help='path to input file')
     parser.add_argument('--threshold-combinations', type=str,
@@ -317,9 +320,11 @@ if __name__ == '__main__':
     parser.add_argument('--use-raw', default=False, help='use scanpy raw data', type=bool)
     parser.add_argument('--var-colname', type=str, default=None, help='column name to use for var names')
     parser.add_argument('--layer-name', type=str, default=None, help='layer name to use for data')
-    parser.add_argument('--save-h5ad', type=bool, default=False, help='save h5ad file')
+    parser.add_argument('--save-h5ad', type=str2bool, default=False,
+                        nargs='?', const=True,
+                        help='whether to save h5ad file')
     args = parser.parse_args()
-    
+
     with open(args.threshold_combinations, encoding="utf-8") as f:
         threshold_combinations_dict = json.load(f)
     Resources = namedtuple('Resources', ['homolog_table_path', 'cell_cycle_genes_path'])
