@@ -4,10 +4,16 @@ input_file_path <- args[1]
 input_file_name <- tools::file_path_sans_ext(basename(input_file_path))
 
 # Set conda env path to the one provided if provided and not NULL/empty string
-if (length(args) > 1 && args[2] != "" && !is.null(args[2])) {
-  reticulate::use_condaenv(args[2])
-}
-
+tryCatch(
+  expr = {
+    if (length(args) > 1 && args[2] != "" && !is.null(args[2])) {
+      reticulate::use_condaenv(args[2])
+    }
+  },
+  error = function(e) {
+    message("Error occurred while loading conda environment: ", conditionMessage(e))
+  }
+)
 library(sceasy)
 library(reticulate)
 library(Seurat)
