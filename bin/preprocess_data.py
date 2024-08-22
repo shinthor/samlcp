@@ -221,7 +221,7 @@ def preprocess_data(input_file_path: str,
                     idx_list += list(curr_col2_subset_idx)
                 curr_series = curr_series.str.cat(name_base + pd.Series(bins_list, index=idx_list).astype(str).loc[curr_adata_index], sep="_")
             column_name += f"_{criteria_name}"
-        adata.obs[column_name] = curr_series.str.lstrip("_")
+        adata.obs[column_name] = curr_series.str.strip("_")
 
     # Save the modified data to the output file path
     if output_file_path is not None:
