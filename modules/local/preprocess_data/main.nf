@@ -14,9 +14,11 @@ process PREPROCESS_DATA {
     val(use_raw)
     val(var_colname)
     val(layer_name)
+    val(save_h5ad)
 
     output:
-    path("*_processed_data.h5ad"), emit: processed_data_file
+    path("*_processed_data.tsv.gz"), emit: processed_tsv
+    path("*_processed_data.h5ad"), emit: processed_data_file, optional: true
 
     script:
     """
@@ -32,6 +34,7 @@ process PREPROCESS_DATA {
     --cell-cycle-genes-path='${cell_cycle_genes_path}' \
     --use-raw='${use_raw}' \
     --var-colname='${var_colname}' \
-    --layer-name='${layer_name}'
+    --layer-name='${layer_name}' \
+    --save-h5ad='${save_h5ad}'
     """
 }

@@ -54,12 +54,13 @@ workflow SCRNA_ANALYSIS_ML_PIPELINE {
         cell_cycle_genes_path,
         params.use_raw,
         params.var_colname,
-        params.layer_name
+        params.layer_name,
+        params.save_h5ad
         )
 
     // RUN GROUP_ANALYSIS_COMBINATIONS
     GROUP_ANALYSIS_COMBINATIONS(
-        PREPROCESS_DATA.out, 
+        PREPROCESS_DATA.out.processed_tsv.flatten(), 
         params.uns_name,
         params.column1,
         params.column2

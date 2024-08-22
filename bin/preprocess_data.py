@@ -5,6 +5,7 @@ This script preprocesses the data for graphing and saves the results to a copy o
 scanpy file with metadata columns added to adata.obs.
 """
 import argparse
+import os
 import pickle
 import anndata
 from scipy.sparse import issparse
@@ -116,7 +117,8 @@ def preprocess_data(input_file_path,
                     colnamestart="combination",
                     use_raw=False,
                     var_colname=None,
-                    layer_name=None
+                    layer_name=None,
+                    save_h5ad=False
 ):
     # Load the input .h5ad file
     adata = anndata.read_h5ad(input_file_path)
@@ -286,7 +288,13 @@ def preprocess_data(input_file_path,
     # Save the modified data to the output file path
     if output_file_path is not None:
         adata.var.index.name = None
-        adata.write_h5ad(output_file_path)
+        # Get full output_file_path without the extension
+        output_file_path_no_ext = os.path.splitext(output_file_path)[0]
+        # Save the adata.obs to tsv
+        adata.obs.to_csv(output_file_path_no_ext + ".tsv.gz", sep="\t", compression="gzip")
+        # Save the data to the output file path as full h5ad if the user wants to save it
+        if save_h5ad:
+            adata.write_h5ad(output_file_path_no_ext + ".h5ad")
     return adata
 
 
@@ -309,6 +317,7 @@ if __name__ == '__main__':
     parser.add_argument('--use-raw', default=False, help='use scanpy raw data', type=bool)
     parser.add_argument('--var-colname', type=str, default=None, help='column name to use for var names')
     parser.add_argument('--layer-name', type=str, default=None, help='layer name to use for data')
+    parser.add_argument('--save-h5ad', type=bool, default=False, help='save h5ad file')
     args = parser.parse_args()
     
     with open(args.threshold_combinations, encoding="utf-8") as f:
@@ -324,5 +333,6 @@ if __name__ == '__main__':
                     args.column2,
                     use_raw=args.use_raw,
                     var_colname=args.var_colname,
-                    layer_name=args.layer_name
+                    layer_name=args.layer_name,
+                    save_h5ad=args.save_h5ad
                     )

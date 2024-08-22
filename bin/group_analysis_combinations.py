@@ -60,7 +60,7 @@ def process_data_for_graphing(graph_df: pd.DataFrame,
 def age_column_transform(age: str) -> int:
     """Find number in string and return it as an int"""
     return int("".join(filter(str.isdigit, age)))
-def main(adata: sc.AnnData,
+def main(df: sc.AnnData,
          output_path_base: str,
          colnamestart: str="combination_",
          level1_category: str = "age",
@@ -71,13 +71,13 @@ def main(adata: sc.AnnData,
     useful for graphing in a separate script.
     """
     # Define gene combinations based on the column names added during preprocessing
-    gene_combinations = [col for col in adata.obs.columns if col.startswith(colnamestart)]
+    gene_combinations = [col for col in df.columns if col.startswith(colnamestart)]
 
     # Use process_data_for_graphing with the new columns added
     for column_name in gene_combinations:
-        curr_obs = adata.obs
+        curr_obs = df
         # Add mask to drop rows where curr_obs[column_name] is null
-        obs_mask = adata.obs[column_name].notnull()
+        obs_mask = df[column_name].notnull()
         df_dict = {
             level1_category: curr_obs[level1_category][obs_mask],
             level2_category: curr_obs[level2_category][obs_mask],
@@ -101,10 +101,10 @@ if __name__ == "__main__":
     parser.add_argument("--level2_category", help="Level 2 category for graphing")
     args = parser.parse_args()
 
-    adata = sc.read_h5ad(args.input_path)
+    df = pd.read_csv(args.input_path, sep="\t", compression="gzip")
     output_path_base = args.output_path_base
     uns_name = args.uns_name
     level1_category = args.level1_category
     level2_category = args.level2_category
     # Load the AnnData object from the output of the preprocessing step
-    main(adata, output_path_base, level1_category = level1_category, level2_category=level2_category, name_to_add=uns_name)
+    main(df, output_path_base, level1_category = level1_category, level2_category=level2_category, name_to_add=uns_name)

@@ -325,6 +325,12 @@
                     "description": "Whether to use Seurat input format",
                     "default": false,
                     "fa_icon": "fas fa-column"
+                },
+                "save_h5ad": {
+                    "type": "boolean",
+                    "description": "Whether to save the preprocessed h5ad file",
+                    "default": false,
+                    "fa_icon": "fas fa-column"
                 }
             }
         }  
