@@ -28,7 +28,8 @@ def preprocess_data(input_file_path: str,
                     use_raw=False,
                     var_colname=None,
                     layer_name=None,
-                    save_h5ad=False
+                    save_h5ad=False,
+                    debug=False
 ) -> anndata.AnnData:
     """
     Preprocess the data for graphing and save the results to a tsv file and optionally
@@ -119,25 +120,32 @@ def preprocess_data(input_file_path: str,
         compatible_genes, _ = convert_species.get_compatible_genes(id2symbols)
         s_genes = [compatible_genes[x][0] for x in s_genes if x in compatible_genes]
         g2m_genes = [compatible_genes[x][0] for x in g2m_genes if x in compatible_genes]
+        if debug:
+            print(f"s_genes converted: {s_genes}")
+            print(f"g2m_genes converted: {g2m_genes}")
+        
     s_genes = [x for x in s_genes if x in adata.var_names]
     g2m_genes = [x for x in g2m_genes if x in adata.var_names]
+    if debug:
+        print(f"s_genes overlap: {s_genes}")
+        print(f"g2m_genes overlap: {g2m_genes}")
     sc.tl.score_genes_cell_cycle(adata, s_genes=s_genes, g2m_genes=g2m_genes, use_raw=False)
 
     # Restore counts to adata.X
     adata.X = adata.layers["counts_pipe"].copy()
 
     # Iterate over the threshold combinations
-    adata_df = adata.to_df()
+    # adata_df = adata.to_df()
     original_adata = adata
     for criteria in filtered_combinations:
         # Generate a column name based on the combination and the criteria name
         column_name = f"{colnamestart}"
-        curr_series = pd.Series("", index=adata_df.index, dtype=str)
+        curr_series = pd.Series("", index=adata.obs.index, dtype=str)
         adata = original_adata
         for criteria_name, criteria_config in criteria.items():
             if criteria_config["type"] == "gene":
                 # Apply gene-based criteria
-                curr_series = curr_series.str.cat((adata_df[criteria_name] > criteria_config["threshold"]).map({True: f"{criteria_name}_pos", False: f"{criteria_name}_neg"}), sep="_")
+                curr_series = curr_series.str.cat((adata.obs.index[criteria_name] > criteria_config["threshold"]).map({True: f"{criteria_name}_pos", False: f"{criteria_name}_neg"}), sep="_")
             elif criteria_config["type"] == "model":
                 # Apply model-based criteria
                 model_predictions = myutils.apply_model(adata, criteria_config, homolog_table_path=homolog_table_path)
@@ -258,6 +266,9 @@ if __name__ == '__main__':
     parser.add_argument('--save-h5ad', type=myutils.str2bool, default=False,
                         nargs='?', const=True,
                         help='whether to save h5ad file')
+    parser.add_argument('--debug', type=myutils.str2bool, default=False,
+                        nargs='?', const=True,
+                        help='Debug mode')
     args = parser.parse_args()
 
     with open(args.threshold_combinations, encoding="utf-8") as f:
@@ -274,5 +285,6 @@ if __name__ == '__main__':
                     use_raw=args.use_raw,
                     var_colname=args.var_colname,
                     layer_name=args.layer_name,
-                    save_h5ad=args.save_h5ad
+                    save_h5ad=args.save_h5ad,
+                    debug=args.debug
                     )
