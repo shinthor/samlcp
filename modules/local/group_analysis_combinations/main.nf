@@ -1,6 +1,6 @@
 process GROUP_ANALYSIS_COMBINATIONS {
     label "process_medium"
-    label "process_high_memory"
+    maxRetries 4
     conda "${moduleDir}/environment.yml"
 
     input:
