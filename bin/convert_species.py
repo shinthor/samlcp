@@ -1,5 +1,7 @@
 import anndata
 import pandas as pd
+import scanpy as sc
+import numpy as np
 from collections import defaultdict 
 
 def get_id2symbols_dict(homolog_table,
@@ -94,7 +96,7 @@ def get_one_to_one_only(compatible_genes, reverse_translate_dict):
             one2one_dict[curr_gene] = compatible_genes[curr_gene][0]
     return one2one_dict
 
-def convert_species_one2one_adata(adata, one2one_dict, 
+def convert_species_one2one_adata_high_mem(adata, one2one_dict, 
                                  old_var_name="MouseGeneSymbol", 
                                  new_var_name="HumanGeneSymbol", 
                                  target_genes=None,
@@ -113,6 +115,7 @@ def convert_species_one2one_adata(adata, one2one_dict,
     Returns:
         anndata.AnnData: AnnData object with species converted.
     """
+    print("running conv")
     # Create a copy of the AnnData object
     adata = adata.copy()
     # If var_names_column is provided, set adata.var_names accordingly
@@ -130,8 +133,9 @@ def convert_species_one2one_adata(adata, one2one_dict,
     new_adata = adata
     # If target genes are provided, subset the data to those genes
     if target_genes is not None:
-        print("Warning: not all target genes were found in the dataset")
         genes_not_in_adata = set(target_genes).difference(set(adata.var_names))
+        if len(genes_not_in_adata) > 0:
+            print("Warning: not all target genes were found in the dataset")
         adata_df = adata.to_df()[list(set(adata.var_names).intersection(set(target_genes)))]
         for gene in genes_not_in_adata:
             adata_df[gene] = 0
@@ -141,6 +145,74 @@ def convert_species_one2one_adata(adata, one2one_dict,
         new_adata.var_names = adata_df.columns
         new_adata.uns = adata.uns
     return new_adata
+
+
+def convert_species_one2one_adata(adata, one2one_dict, 
+                                 old_var_name="MouseGeneSymbol", 
+                                 new_var_name="HumanGeneSymbol", 
+                                 target_genes=None,
+                                 var_names_column=None,
+                                 name_to_add="conv") -> anndata.AnnData:
+    """
+    Convert the species of an AnnData object using a one-to-one dictionary.
+
+    Args:
+        adata (anndata.AnnData): AnnData object to convert.
+        one2one_dict (dict): One-to-one dictionary of gene conversions.
+        old_var_name (str, optional): Name of the old species gene symbol column. Defaults to "MouseGeneSymbol".
+        new_var_name (str, optional): Name of the new species gene symbol column. Defaults to "HumanGeneSymbol".
+        target_genes (list, optional): List of target genes to subset to. Defaults to None.
+        var_names_column (str, optional): Name of the column in adata.var that contains the gene symbols. Defaults to None.
+    Returns:
+        anndata.AnnData: AnnData object with species converted.
+    """
+    # Create a copy of the AnnData object
+    # new_adata = anndata.AnnData(filename=name_to_add+"_converted.h5ad", filemode="a")
+    # If var_names_column is provided, set adata.var_names accordingly
+    new_var = adata.var.copy()
+    if var_names_column:
+       new_var.index = new_var[var_names_column]
+    # Set the old species gene symbol column
+    new_var[old_var_name] = new_var.index
+    # adata.var[old_var_name] = new_var.index
+    # Convert the gene symbols to the new species using the one-to-one dictionary
+    new_var[new_var_name] = new_var.index.map(one2one_dict)
+    # Remove genes that were not converted
+    gene_mask = new_var[new_var_name].notna()
+    # new_var = new_var.loc[gene_mask]
+    # adata = adata[:, gene_mask]
+    # Set the new gene symbols as the var_names
+    # adata.var_names = adata.var[new_var_name]
+    # Create a new AnnData object
+    
+    # If target genes are provided, subset the data to those genes
+    if target_genes is not None:
+        # genes_not_in_adata = set(target_genes).difference(set(adata.var_names))
+        # adata_df = adata[:, list(set(new_var[new_var_name].loc[gene_mask]).intersection(set(target_genes)))].to_df()
+        # for gene in genes_not_in_adata:
+        #     adata_df[gene] = 0
+        # adata_df = adata_df[target_genes]
+        gene_mask = gene_mask & new_var[new_var_name].isin(target_genes)
+        adata_df = pd.DataFrame(adata[:, gene_mask].X, index=adata.obs_names, columns=new_var[new_var_name].loc[gene_mask])
+        new_var = new_var.loc[gene_mask]
+        new_var.index = adata_df.columns
+        adata_df.columns = new_var[new_var_name]
+        adata_df = adata_df.reindex(columns=target_genes, fill_value=0)
+        new_var = new_var.reindex(index=adata_df.columns)
+        new_adata = anndata.AnnData(adata_df, obs=adata.obs, var=new_var)
+        new_adata.obs_names = adata.obs_names
+        new_adata.var_names = adata_df.columns
+        # new_adata.uns = adata.uns
+        del adata_df
+        return new_adata
+    else:
+        new_adata = adata[:, gene_mask].copy()
+        new_var = new_var.loc[gene_mask]
+        new_adata.var_names = new_var[new_var_name]
+        new_var.index = new_adata.var_names
+        new_adata.var= new_var
+        # del adata_df
+        return new_adata
 
 def convert_species_one2one_df(df, one2one_dict, 
                               old_var_name="MouseGeneSymbol", 
