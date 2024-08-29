@@ -12,8 +12,6 @@ The resulting dataframes are saved as TSV files and can be used for graphing in 
 import argparse
 import os
 import pandas as pd
-import scanpy as sc
-
 
 def process_data_for_graphing(graph_df: pd.DataFrame,
                               level1_category: str = "Age",
@@ -60,7 +58,7 @@ def process_data_for_graphing(graph_df: pd.DataFrame,
 def age_column_transform(age: str) -> int:
     """Find number in string and return it as an int"""
     return int("".join(filter(str.isdigit, age)))
-def main(df: sc.AnnData,
+def main(df: pd.DataFrame,
          output_path_base: str,
          colnamestart: str="combination_",
          level1_category: str = "age",
