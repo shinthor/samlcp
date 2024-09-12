@@ -82,7 +82,7 @@ def main(df: pd.DataFrame,
             column_name[len(colnamestart):]: curr_obs[column_name][obs_mask]
         }
         if level1_category == "age" or level1_category == "development_stage":
-            df_dict[level1_category] = df_dict[level1_category].apply(age_column_transform)
+            df_dict[level1_category] = df_dict[level1_category].astype(str).apply(age_column_transform)
         out_df = process_data_for_graphing(pd.DataFrame(df_dict), level1_category=level1_category, level2_category=level2_category, level3_category=column_name[len(colnamestart):])
         out_df.to_csv(
             os.path.join(output_path_base,
