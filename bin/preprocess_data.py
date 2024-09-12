@@ -6,6 +6,7 @@ a copy of the original scanpy file with metadata columns added to adata.obs.
 """
 import argparse
 import os
+import gc
 from collections import namedtuple
 import anndata
 from scipy.sparse import issparse
@@ -95,10 +96,12 @@ def preprocess_data(input_file_path: str,
         print("Gene idx:", gene_idx)
         adata.X[:, gene_idx] = avg_expr[:, np.newaxis]
     adata = adata[:, ~duplicated_minus_first]
-    
-    adata.layers["counts_pipe"] = adata.X.copy()
+    aid_adata_path = f'{name_to_add}_aid_adata.h5ad'
+    adata.write_h5ad(aid_adata_path)
+    aid_adata = sc.read_h5ad(aid_adata_path, backed="r+")
+    # adata.layers["counts_pipe"] = adata.X.copy()
     sc.pp.normalize_total(adata, target_sum=1e4)
-    adata.layers["norm_pipe"] = adata.X.copy()
+    # aid_adata.layers["norm_pipe"] = adata.X.copy()
     # sc.pp.log1p(adata, base=2)
     # adata.layers["log_pipe"] = adata.X.copy()
     # sc.pp.scale(adata)
@@ -132,7 +135,9 @@ def preprocess_data(input_file_path: str,
     sc.tl.score_genes_cell_cycle(adata, s_genes=s_genes, g2m_genes=g2m_genes, use_raw=False)
 
     # Restore counts to adata.X
-    adata.X = adata.layers["counts_pipe"].copy()
+    # adata.X = adata.layers["counts_pipe"].copy()
+    adata.X = aid_adata.X[()]
+
 
     # Iterate over the threshold combinations
     # adata_df = adata.to_df()
@@ -140,12 +145,16 @@ def preprocess_data(input_file_path: str,
     for criteria in filtered_combinations:
         # Generate a column name based on the combination and the criteria name
         column_name = f"{colnamestart}"
-        curr_series = pd.Series("", index=adata.obs.index, dtype=str)
+        curr_series = pd.Series("", index=adata.obs.index, dtype=str, copy=True)
         adata = original_adata
         for criteria_name, criteria_config in criteria.items():
             if criteria_config["type"] == "gene":
+                curr_gene_idx = adata.var_names.get_loc(criteria_name)
                 # Apply gene-based criteria
-                curr_series = curr_series.str.cat((adata.obs.index[criteria_name] > criteria_config["threshold"]).map({True: f"{criteria_name}_pos", False: f"{criteria_name}_neg"}), sep="_")
+                curr_series = curr_series.str.cat(pd.Series(adata.X[:, curr_gene_idx] > criteria_config["threshold"],
+                                                            index=curr_series.index, copy=True).map(
+                                                                {True: f"{criteria_name}_pos", False: f"{criteria_name}_neg"}),
+                                                                sep="_")
             elif criteria_config["type"] == "model":
                 # Apply model-based criteria
                 model_predictions = myutils.apply_model(adata, criteria_config, homolog_table_path=homolog_table_path)
@@ -168,7 +177,7 @@ def preprocess_data(input_file_path: str,
                 # Apply bin-based criteria
                 curr_adata = adata
                 curr_adata_index = curr_adata.obs.index
-                curr_adata.X = curr_adata.layers["norm_pipe"].copy()
+                sc.pp.normalize_total(adata, target_sum=1e4)
                 unique_col2_vals = curr_adata.obs[column2].unique()
                 gene_subset = curr_adata[:, criteria_config["gene"]]
                 idx_list = []
@@ -187,6 +196,7 @@ def preprocess_data(input_file_path: str,
                     curr_bins = np.digitize(curr_exp, bin_edges)
                     bins_list += list(curr_bins)
                     idx_list += list(curr_col2_subset_idx)
+                adata.X = aid_adata.X[()]
                 curr_series = curr_series.str.cat(criteria_name + "_lvl_" + pd.Series(bins_list, index=idx_list).astype(str).loc[curr_adata_index], sep="_")
             elif criteria_config["type"] == "cell_cycle":
                 curr_series = curr_series.str.cat(adata.obs["phase"].astype(str), sep="_")
@@ -228,6 +238,7 @@ def preprocess_data(input_file_path: str,
                     idx_list += list(curr_col2_subset_idx)
                 curr_series = curr_series.str.cat(name_base + pd.Series(bins_list, index=idx_list).astype(str).loc[curr_adata_index], sep="_")
             column_name += f"_{criteria_name}"
+            gc.collect()
         adata.obs[column_name] = curr_series.str.strip("_")
 
     # Save the modified data to the output file path
@@ -239,7 +250,7 @@ def preprocess_data(input_file_path: str,
         adata.obs.to_csv(output_file_path_no_ext + ".tsv.gz", sep="\t", compression="gzip")
         # Save the data to the output file path as full h5ad if the user wants to save it
         if save_h5ad:
-            adata.write_h5ad(output_file_path_no_ext + ".h5ad")
+            adata.write_h5ad(output_file_path_no_ext + ".h5ad", compression="gzip")
     return adata
 
 
