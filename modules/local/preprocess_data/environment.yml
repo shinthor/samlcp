@@ -8,5 +8,6 @@ dependencies:
   - conda-forge::scikit-learn=1.2.2
   - conda-forge::pandas>=2.0.0
   - conda-forge::scipy>=1.10
+  - conda-forge::pip
   - pip:
       - pyjson5==1.6.6
