@@ -224,19 +224,22 @@ def preprocess_data(input_file_path: str,
     # Iterate over the threshold combinations
     original_adata = adata
     for criteria in filtered_combinations:
-        # Generate a column name based on the combination and the criteria name
-        column_name = f"{colnamestart}"
-        curr_series = pd.Series("", index=adata.obs.index, dtype=str, copy=True)
-        adata = original_adata
-        for criteria_name, criteria_config in criteria.items():
-            series_add, series_directive = preprocess_category(adata, criteria_name, criteria_config, column2, homolog_table_path, aid_adata)
-            if series_directive == "overwrite_class":
-                curr_series[series_add.notnull()] = series_add
-            else:
-                curr_series = curr_series.str.cat(series_add, sep="_")
-            column_name += f"_{criteria_name}"
-            gc.collect()
-        adata.obs[column_name] = curr_series.str.strip("_")
+        try:
+            # Generate a column name based on the combination and the criteria name
+            column_name = f"{colnamestart}"
+            curr_series = pd.Series("", index=adata.obs.index, dtype=str, copy=True)
+            adata = original_adata
+            for criteria_name, criteria_config in criteria.items():
+                series_add, series_directive = preprocess_category(adata, criteria_name, criteria_config, column2, homolog_table_path, aid_adata)
+                if series_directive == "overwrite_class":
+                    curr_series[series_add.notnull()] = series_add
+                else:
+                    curr_series = curr_series.str.cat(series_add, sep="_")
+                column_name += f"_{criteria_name}"
+                gc.collect()
+            adata.obs[column_name] = curr_series.str.strip("_")
+        except Exception as e:
+            print(f"Error in {criteria}: {e}")
 
     # Save the modified data to the output file path
     if output_file_path is not None:
