@@ -8,6 +8,7 @@ dependencies:
   - conda-forge::scikit-learn=1.2.2
   - conda-forge::pandas>=2.0.0
   - conda-forge::scipy>=1.10
+  - conda-forge::cachetools>=5.5.0
   - conda-forge::python>=3.11
   - conda-forge::pip
   - pip:
