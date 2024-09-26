@@ -1,6 +1,9 @@
 process PREPROCESS_DATA {
     label "process_high"
     label "process_high_memory"
+    // Uncomment below to send to bigmem slurm partition or increase maxRetries
+    // clusterOptions '-p bigmem'
+    // maxRetries 3
     conda "${moduleDir}/environment.yml"
 
     input:
