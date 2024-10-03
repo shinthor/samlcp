@@ -22,8 +22,8 @@ import py_pipe_utils as myutils
 
 @cached( # Decorator to cache the outputs of this function in memory
         LRUCache(maxsize=128, getsizeof=Cache.getsizeof), # default getsizeof returns 1 for any object, so max size means number of items
-        key=lambda adata, criteria_name, criteria_config, column2, homolog_table_path, aid_adata : hashkey(criteria_name, json.dumps(criteria_config))) # just cache based on the criteria and ignore the unhashable args
-def preprocess_category(adata, criteria_name, criteria_config, column2, homolog_table_path, aid_adata):
+        key=lambda adata, criteria_name, criteria_config, column2, homolog_table_path, aid_adata, aid_adata_normalized : hashkey(criteria_name, json.dumps(criteria_config))) # just cache based on the criteria and ignore the unhashable args
+def preprocess_category(adata, criteria_name, criteria_config, column2, homolog_table_path, aid_adata, aid_adata_normalized):
     if criteria_config["type"] == "gene":
         curr_gene_idx = adata.var_names.get_loc(criteria_name)
         # Apply gene-based criteria
@@ -51,7 +51,7 @@ def preprocess_category(adata, criteria_name, criteria_config, column2, homolog_
         # Apply bin-based criteria
         curr_adata = adata
         curr_adata_index = curr_adata.obs.index
-        sc.pp.normalize_total(adata, target_sum=1e4)
+        adata.X = aid_adata_normalized.X[()]
         unique_col2_vals = curr_adata.obs[column2].unique()
         gene_subset = curr_adata[:, criteria_config["gene"]]
         idx_list = []
@@ -190,9 +190,14 @@ def preprocess_data(input_file_path: str,
         adata.X[:, gene_idx] = avg_expr[:, np.newaxis]
     adata = adata[:, ~duplicated_minus_first]
     aid_adata_path = f'{name_to_add}_aid_adata.h5ad'
+    aid_adata_normalized_path = f'{name_to_add}_aid_adata_normalized.h5ad'
+
     adata.write_h5ad(aid_adata_path)
-    aid_adata = sc.read_h5ad(aid_adata_path, backed="r+")
+    aid_adata = sc.read_h5ad(aid_adata_path, backed="r")
     sc.pp.normalize_total(adata, target_sum=1e4)
+    adata.write_h5ad(aid_adata_normalized_path)
+    aid_adata_normalized = sc.read_h5ad(aid_adata_normalized_path, backed="r")
+
     # Generate the cell cycle scores ahead of time
     sc.pp.log1p(adata, base=10)
     sc.pp.scale(adata)
@@ -230,7 +235,7 @@ def preprocess_data(input_file_path: str,
             curr_series = pd.Series("", index=adata.obs.index, dtype=str, copy=True)
             adata = original_adata
             for criteria_name, criteria_config in criteria.items():
-                series_add, series_directive = preprocess_category(adata, criteria_name, criteria_config, column2, homolog_table_path, aid_adata)
+                series_add, series_directive = preprocess_category(adata, criteria_name, criteria_config, column2, homolog_table_path, aid_adata, aid_adata_normalized)
                 if series_directive == "overwrite_class":
                     curr_series[series_add.notnull()] = series_add
                 else:
