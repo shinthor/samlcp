@@ -3,18 +3,20 @@ args <- commandArgs(trailingOnly=TRUE)
 print(args)
 input_file_path <- args[1]
 project_name <- args[2]
+column1_name <- args[3]
+column2_name <- args[4]
 output_dir <- args[5]
 
 results_data <- read.table(input_file_path, header = TRUE, sep = "\t")
 
 # Create unique cell types list
-unique_cell_types <- unique(results_data[[args[4]]])
+unique_cell_types <- unique(results_data[[column2_name]])
 
 for (cell_type in unique_cell_types) {
-  filtered_data <- subset(results_data, results_data[[args[4]]] == cell_type)
+  filtered_data <- subset(results_data, results_data[[column2_name]] == cell_type)
   
   # Order the data by age and the column 3 category
-  filtered_data <- filtered_data[order(filtered_data[[args[3]]], filtered_data[[colnames(filtered_data)[1]]]), ]
+  filtered_data <- filtered_data[order(filtered_data[[column1_name]], filtered_data[[colnames(filtered_data)[1]]]), ]
   
   p <- ggplot(filtered_data, aes(x = factor(.data[[colnames(filtered_data)[3]]]), y = .data[[colnames(filtered_data)[6]]], fill = factor(.data[[colnames(filtered_data)[1]]]))) +
     geom_bar(position = "dodge", stat = "identity") +
