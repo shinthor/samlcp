@@ -8,17 +8,7 @@ import scanpy as sc
 import anndata
 import pandas as pd
 import convert_species
-
-class KeyDict(dict):
-    """
-    A dictionary that returns its key if the key is not present
-    """
-    def __missing__(self, key):
-        return key
-
-def str2bool(v):
-    """Parse boolean string arguments for use by argparse command line inputs."""
-    return str(v).lower() in ("yes", "true", "t", "y", "1")
+from simple_py_utils import KeyDict, str2bool, filter_threshold_combinations
 
 def apply_model(adata: anndata.AnnData,
                 model_config: str,
@@ -95,37 +85,3 @@ def apply_model(adata: anndata.AnnData,
     if return_data:
         return pd.Series(clf.predict(adata.to_df()), index=adata.obs_names.copy()), adata, clf
     return pd.Series(clf.predict(adata.to_df()), index=adata.obs_names.copy())
-
-def filter_threshold_combinations(threshold_combinations, adata, var_colname=None):
-    """
-    Filter threshold combinations based on gene presence in adata.
-
-    Args:
-        threshold_combinations (dict): Dictionary of threshold combinations.
-        adata (AnnData): AnnData object.
-        var_colname (str, optional): Column name to use for var names. Defaults to None.
-
-    Returns:
-        list: Filtered threshold combinations.
-    """
-    filtered_combinations = []  # Initialize an empty list to store filtered combinations
-    for criteria in threshold_combinations:  # Iterate over each combination group
-        for criteria_name, criteria_config in criteria.items():  # Iterate over each criteria config
-            if criteria_config["type"] in {"gene", "bins"}:  # Check if the criteria type is "gene" or "bins"
-                if criteria_config["type"] == "gene":
-                    gene = criteria_name  # Set the gene to the criteria name if type is "gene"
-                elif criteria_config["type"] == "bins":
-                    gene = criteria_config["gene"]  # Set the gene to the criteria config gene if type is "bins"
-                if not var_colname and gene not in adata.var_names:  # Check if gene is not in adata var names if var_colname is not provided
-                    print(f"Warning: gene {gene} not found in the input data, skipping")  # Print a warning if gene is not found
-                    continue  # Skip to the next iteration without including the combination group
-                if var_colname and gene not in adata.var[var_colname].astype(str):  # Check if gene is not in adata var column if var_colname is provided
-                    print(f"Warning: gene {gene} not found in the input data, skipping")  # Print a warning if gene is not found
-                    continue  # Skip to the next iteration without including the combination group
-                filtered_combinations.append(criteria)  # Append the combination group to the filtered combinations if no genes were skipped
-            # May want to add checks for other types here
-            else:
-                filtered_combinations.append(criteria)
-                        
-
-    return filtered_combinations  # Return the filtered threshold combinations

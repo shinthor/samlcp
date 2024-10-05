@@ -18,6 +18,7 @@ from cachetools import LRUCache, cached, Cache
 from cachetools.keys import hashkey
 import sensig_score
 import convert_species
+import simple_py_utils
 import py_pipe_utils as myutils
 
 @cached( # Decorator to cache the outputs of this function in memory
@@ -35,7 +36,7 @@ def preprocess_category(adata, criteria_name, criteria_config, column2, homolog_
         model_predictions = myutils.apply_model(adata, criteria_config, homolog_table_path=homolog_table_path)
         if "rename_classes" in criteria_config:
             # Make a dict from the rename_classes dict that renames classes included and keeps the rest the same
-            map_dict = myutils.KeyDict(**criteria_config["rename_classes"])
+            map_dict = simple_py_utils.KeyDict(**criteria_config["rename_classes"])
             model_predictions = model_predictions.map(map_dict)
         if "overwrite_classes" in criteria_config:
             # Map the predictions to the desired classes. Unincluded classes will be set to NaNs so they will not override the original classes.
@@ -173,7 +174,7 @@ def preprocess_data(input_file_path: str,
         adata.var.index.name = None
     
     # Filter the threshold combinations based on the input data
-    filtered_combinations = myutils.filter_threshold_combinations(threshold_combinations, adata, var_colname)
+    filtered_combinations = simple_py_utils.filter_threshold_combinations(threshold_combinations, adata, var_colname)
 
     # Ensure the data is dense and has unique gene names
     if issparse(adata.X):
@@ -279,10 +280,10 @@ if __name__ == '__main__':
     parser.add_argument('--use-raw', default=False, help='use scanpy raw data', type=bool)
     parser.add_argument('--var-colname', type=str, default=None, help='column name to use for var names')
     parser.add_argument('--layer-name', type=str, default=None, help='layer name to use for data')
-    parser.add_argument('--save-h5ad', type=myutils.str2bool, default=False,
+    parser.add_argument('--save-h5ad', type=simple_py_utils.str2bool, default=False,
                         nargs='?', const=True,
                         help='whether to save h5ad file')
-    parser.add_argument('--debug', type=myutils.str2bool, default=False,
+    parser.add_argument('--debug', type=simple_py_utils.str2bool, default=False,
                         nargs='?', const=True,
                         help='Debug mode')
     args = parser.parse_args()

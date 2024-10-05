@@ -63,19 +63,20 @@ workflow SCRNA_ANALYSIS_ML_PIPELINE {
         PREPROCESS_DATA.out.processed_tsv.flatten(), 
         params.uns_name,
         params.column1,
-        params.column2
+        params.column2,
+        params.sample_column
         )
 
     // RUN CREATE_PIES
     CREATE_PIES(
-        GROUP_ANALYSIS_COMBINATIONS.out.flatten(),
+        GROUP_ANALYSIS_COMBINATIONS.out.gene_combinations.flatten(),
         params.uns_name,
         params.column1,
         params.column2
         )
     
     CREATE_BARS(
-        GROUP_ANALYSIS_COMBINATIONS.out.flatten(),
+        GROUP_ANALYSIS_COMBINATIONS.out.gene_combinations_with_sample.flatten(),
         params.uns_name,
         params.column1,
         params.column2

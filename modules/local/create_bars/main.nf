@@ -9,12 +9,12 @@ process CREATE_BARS{
     val(column2)
 
     output:
-    path("*.{png,pdf}")
+    path("*.{png,pdf,svg}")
 
     script:
     """
-    Rscript \
-    ${workflow.projectDir}/bin/create_bar_charts.R \
+    python \
+    ${workflow.projectDir}/bin/create_bar_charts.py \
     $processed_data_file \
     "${uns_name}" \
     "${column1}" \

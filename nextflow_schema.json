@@ -273,6 +273,12 @@
                     "fa_icon": "fas fa-indent",
                     "help_text": "The second category to group by. Generally a categorical variable like tissue or cell type"
                 },
+                "sample_column": {
+                    "type": "string",
+                    "description": "The obs column for sample identification. Generally a string variable like 'orig.ident', 'sample', or 'patient.id'",
+                    "fa_icon": "fas fa-indent",
+                    "help_text": "The obs column for sample identification. Generally a string variable like 'orig.ident', 'sample', or 'patient.id'"
+                },
                 "threshold_combinations": {
                     "type": "string",
                         "description": "Threshold combinations file path giving analysis features to analyze.",
