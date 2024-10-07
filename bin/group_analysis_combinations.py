@@ -56,7 +56,7 @@ def process_data_for_graphing(graph_df: pd.DataFrame,
     return graph_df_unique_counts
 
 
-def process_data_for_graphing_with_sample(graph_df: pd.DataFrame,
+def process_categorical_data_for_graphing_with_sample(graph_df: pd.DataFrame,
                               level1_category: str = "Age",
                               level2_category: str = "Cell Type",
                               level3_category: str = "Predicted Senescence Class",
@@ -89,7 +89,7 @@ def process_data_for_graphing_with_sample(graph_df: pd.DataFrame,
     # Calculate proportion of each level3_category for each combination of level1_category and level2_category
     graph_df_unique_counts[f"Proportion_{level3_category}_Per_{level1_category}_AND_{level2_category}_Combination"] = \
         graph_df_unique_counts["count"] / graph_df_unique_counts.groupby(
-            [level1_category, level2_category], axis="index")["count"].transform("sum")
+            [level1_category, level2_category, sample_category], axis="index")["count"].transform("sum")
 
     graph_df_unique_counts = graph_df_unique_counts.fillna(0)
     return graph_df_unique_counts
@@ -131,7 +131,7 @@ def main(df: pd.DataFrame,
         out_df.to_csv(out_df_path, sep="\t")
         if sample_category_column_name:
             df_dict[sample_category_column_name] = curr_obs[sample_category_column_name][obs_mask]
-            separate_sample_out_df = process_data_for_graphing_with_sample(pd.DataFrame(df_dict),
+            separate_sample_out_df = process_categorical_data_for_graphing_with_sample(pd.DataFrame(df_dict),
                                                                         level1_category=level1_category,
                                                                         level2_category=level2_category,
                                                                         level3_category=column_name[len(colnamestart):],
