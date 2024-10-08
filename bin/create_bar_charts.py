@@ -2,6 +2,7 @@
 # coding: utf-8
 
 import sys
+import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -33,13 +34,17 @@ def main():
     for cell_type in unique_cell_types:
         # Filter the data by cell type
         filtered_data = results_data[results_data[column2_name] == cell_type]
-
+        sorted_hue_categories = np.sort(results_data[results_data.columns[x_axis_grouping_column_pos]].unique())
         # Order the data by age and column 3 category
-        filtered_data = filtered_data.sort_values(by=[results_data.columns[x_axis_grouping_column_pos], column1_name])
+        filtered_data = filtered_data.sort_values(by=[results_data.columns[x_axis_grouping_column_pos]])
 
         # Create a bar chart using Seaborn
         plt.figure(figsize=(12, 6))
-        sns.barplot(x=results_data.columns[x_axis_column_pos], y=results_data.columns[y_axis_column_pos], hue=results_data.columns[x_axis_grouping_column_pos], data=filtered_data)
+        sns.barplot(x=results_data.columns[x_axis_column_pos],
+                    y=results_data.columns[y_axis_column_pos],
+                    hue=results_data.columns[x_axis_grouping_column_pos],
+                    hue_order=sorted_hue_categories,
+                    data=filtered_data)
 
         # Set plot title and labels
         plt.title(f"Cell Type: {cell_type}")
