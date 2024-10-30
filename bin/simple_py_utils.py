@@ -45,3 +45,42 @@ def filter_threshold_combinations(threshold_combinations, adata, var_colname=Non
             else:
                 filtered_combinations.append(criteria)
     return filtered_combinations  # Return the filtered threshold combinations
+
+def convert_new_to_old_threshold_combinations(new_form_threshold_combinations):
+    """
+    Convert new format threshold combinations to the old format.
+
+    The new format consists of a dictionary with two keys: 'definitions' and 'combinations'.
+    'definitions' contains the configuration details for each criteria, and 'combinations'
+    contains a list of lists, where each inner list represents a combination of criteria
+    names.
+
+    The old format is a list of dictionaries, where each dictionary represents a combination
+    of criteria with their respective configurations.
+
+    Args:
+    new_form_threshold_combinations (dict): A dictionary in the new format with keys 'definitions' and 'combinations'.
+
+    Returns:
+    list: A list of dictionaries in the old format, where each dictionary represents a combination of criteria.
+    """
+    # Extract definitions and combinations from the new threshold combinations format
+    definitions = new_form_threshold_combinations['definitions']
+    combinations = new_form_threshold_combinations['combinations']
+    
+    # Initialize the old format list
+    old_format = []
+    
+    # Iterate through each combination
+    for combination in combinations:
+        # Create a new dictionary for this combination
+        combination_dict = {}
+        
+        # Add each definition to the combination dictionary
+        for config_name in combination:
+            combination_dict[config_name] = definitions[config_name]
+        
+        # Add the combination dictionary to the old format list
+        old_format.append(combination_dict)
+    
+    return old_format

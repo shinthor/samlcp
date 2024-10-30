@@ -290,6 +290,8 @@ if __name__ == '__main__':
 
     with open(args.threshold_combinations, encoding="utf-8") as f:
         threshold_combinations_dict = json.load(f)
+    if "definitions" in threshold_combinations_dict:
+        threshold_combinations_dict = simple_py_utils.convert_new_to_old_threshold_combinations(threshold_combinations_dict)
     Resources = namedtuple('Resources', ['homolog_table_path', 'cell_cycle_genes_path'])
     gene_resources = Resources(args.homolog_table_path, args.cell_cycle_genes_path)
     preprocess_data(args.input_file,
