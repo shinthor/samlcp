@@ -26,7 +26,7 @@ process PREPROCESS_DATA {
     script:
     """
     python \
-    '${workflow.projectDir}/bin/preprocess_data.py' \
+    '${workflow.projectDir}/bin/preprocess_adata.py' \
     --input-file='${original_input_file}' \
     --threshold-combinations='${threshold_combinations}' \
     --output-file='${uns_name}_processed_data.h5ad' \
