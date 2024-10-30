@@ -9,7 +9,7 @@ include { paramsSummaryMap       } from 'plugin/nf-validation'
 include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_scrna_analysis_ml_pipeline_pipeline'
-include { PREPROCESS_DATA        } from '../modules/local/preprocess_adata'
+include { PREPROCESS_ADATA        } from '../modules/local/preprocess_adata'
 include { GROUP_ANALYSIS_COMBINATIONS } from  '../modules/local/group_analysis_combinations'
 include { CREATE_PIES            } from '../modules/local/create_pies'
 include { CREATE_BARS            } from '../modules/local/create_bars'
@@ -44,7 +44,7 @@ workflow SCRNA_ANALYSIS_ML_PIPELINE {
     cell_cycle_genes_path = Channel.of("${workflow.projectDir}/resources/regev_lab_cell_cycle_genes.txt")
 
     // RUN PREPROCESS_DATA
-    PREPROCESS_DATA(
+    PREPROCESS_ADATA(
         ch_folder_paths,
         params.threshold_combinations,
         params.uns_name,

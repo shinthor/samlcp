@@ -1,4 +1,4 @@
-process PREPROCESS_DATA {
+process PREPROCESS_ADATA {
     label "process_high"
     label "process_high_memory"
     // Uncomment below to send to bigmem slurm partition or increase maxRetries
