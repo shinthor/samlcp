@@ -11,7 +11,6 @@ include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pi
 include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_scrna_analysis_ml_pipeline_pipeline'
 include { PREPROCESS_ADATA        } from '../modules/local/preprocess_adata'
 // include { ANALYZE_SINGLE_CATEGORY } from '../modules/local/analyze_single_category'
-// include { RUN_SENCID              } from '../modules/local/run_sencid'
 // include { COMBINE_CATEGORIES      } from '../modules/local/combine_categories'
 
 include { GROUP_ANALYSIS_COMBINATIONS } from  '../modules/local/group_analysis_combinations'

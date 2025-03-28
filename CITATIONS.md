@@ -39,3 +39,17 @@
 - [Singularity](https://pubmed.ncbi.nlm.nih.gov/28494014/)
 
   > Kurtzer GM, Sochat V, Bauer MW. Singularity: Scientific containers for mobility of compute. PLoS One. 2017 May 11;12(5):e0177459. doi: 10.1371/journal.pone.0177459. eCollection 2017. PubMed PMID: 28494014; PubMed Central PMCID: PMC5426675.
+
+## Single-cell analysis tools
+
+- [Seurat](https://doi.org/10.1038/s41587-023-01767-y)
+
+  > Hao Y, Stuart T, Kowalski MH, Choudhary S, Hoffman P, Hartman A, Srivastava A, Molla G, Madad S, Fernandez-Granda C, Satija R (2023). "Dictionary learning for integrative, multimodal and scalable single-cell analysis." Nature Biotechnology. doi:10.1038/s41587-023-01767-y.
+
+- [Scanpy](https://doi.org/10.1186/s13059-017-1382-0)
+
+  > Wolf FA, Angerer P, Theis FJ (2018). "Scanpy: large-scale single-cell gene expression data analysis." Genome Biology, 19(1):15. doi:10.1186/s13059-017-1382-0.
+
+- [scikit-learn](https://jmlr.org/papers/v12/pedregosa11a.html)
+
+  > Pedregosa F, Varoquaux G, Gramfort A, Michel V, Thirion B, Grisel O, Blondel M, Prettenhofer P, Weiss R, Dubourg V, Vanderplas J, Passos A, Cournapeau D, Brucher M, Perrot M, Duchesnay É (2011). "Scikit-learn: Machine Learning in Python." Journal of Machine Learning Research, 12:2825-2830.

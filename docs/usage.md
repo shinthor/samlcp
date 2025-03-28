@@ -1,73 +1,173 @@
 # nerettilab/scrna_analysis_ml_pipeline: Usage
 
-> _Documentation of pipeline parameters is generated automatically from the pipeline schema and can no longer be found in markdown files._
-
 ## Introduction
 
-<!-- TODO nf-core: Add documentation about anything specific to running your pipeline. For general topics, please point to (and add to) the main nf-core website. -->
+The nerettilab/scrna_analysis_ml_pipeline is designed to analyze single-cell RNA sequencing data by integrating gene expression analysis, machine learning predictions, and cell cycle scoring. The pipeline processes Scanpy AnnData objects and generates visualizations for understanding cellular heterogeneity.
 
-## Samplesheet input
+## Pipeline Parameters
 
-You will need to create a samplesheet with information about the samples you would like to analyse before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row as shown in the examples below.
+### Required Parameters
+
+* `--input`: Path to samplesheet CSV file containing sample information
+* `--outdir`: Output directory for results
+* `--threshold_combinations`: JSON file specifying analysis combinations
+* `--column1`: First grouping category (e.g., age, condition)
+* `--column2`: Second grouping category (e.g., cell type)
+
+### Optional Parameters
+
+* `--sample_column`: Column name for sample identification (e.g., 'orig.ident', 'sample')
+* `--uns_name`: Name to add to the processed data (default: 'analyzed_data')
+* `--sample_taxon`: Sample taxonomy ID (default: 9606 for human)
+* `--use_raw`: Whether to use raw counts from adata.raw if present
+* `--var_colname`: Column name in adata.var to use for variable names
+* `--layer_name`: Layer name to use for analysis
+* `--minimal_genes`: Whether to subset to minimal required genes (default: false)
+* `--random_sample_proportion`: Proportion for random cell sampling (default: 1)
+* `--seurat_input`: Whether input is in Seurat format (default: false)
+* `--save_h5ad`: Whether to save preprocessed h5ad file (default: false)
+
+## Input Format
+
+### Samplesheet Format
+
+The input samplesheet must be a comma-separated file with the following columns:
+
+```csv
+sample,sc_object
+SAMPLE1,/path/to/sample1.h5ad
+SAMPLE2,/path/to/sample2.h5ad
+```
+
+* `sample`: Sample identifier
+* `sc_object`: Path to Scanpy AnnData (.h5ad) or Seurat object
+
+### Threshold Combinations Format
+
+The threshold combinations file should be a JSON file specifying analysis criteria. It supports several types of analyses:
+
+1. Gene Expression Analysis:
+```json
+{
+  "definitions": {
+    "gene1": {
+      "type": "gene",
+      "threshold": 1.0
+    }
+  },
+  "combinations": [["gene1"]]
+}
+```
+
+2. Machine Learning Model Predictions:
+```json
+{
+  "definitions": {
+    "model1": {
+      "type": "model",
+      "path": "/path/to/model.pkl",
+      "taxon": 9606
+    }
+  },
+  "combinations": [["model1"]]
+}
+```
+
+3. Cell Cycle Scoring:
+```json
+{
+  "definitions": {
+    "cell_cycle": {
+      "type": "cell_cycle"
+    }
+  },
+  "combinations": [["cell_cycle"]]
+}
+```
+
+4. Binned Expression Analysis:
+```json
+{
+  "definitions": {
+    "gene_bins": {
+      "type": "bins",
+      "gene": "GENE1",
+      "num_bins": 5,
+      "upper_limit_percentile": 95,
+      "lower_limit_percentile": 5
+    }
+  },
+  "combinations": [["gene_bins"]]
+}
+```
+
+## Running the Pipeline
+
+The typical command for running the pipeline is:
 
 ```bash
---input '[path to samplesheet file]'
+nextflow run nerettilab/scrna_analysis_ml_pipeline \
+  --input samplesheet.csv \
+  --outdir ./results \
+  --threshold_combinations config.json \
+  --column1 age \
+  --column2 cell_type \
+  -profile docker
 ```
 
-### Multiple runs of the same sample
+### Using Configuration Files
 
-The `sample` identifiers have to be the same when you have re-sequenced the same sample more than once e.g. to increase sequencing depth. The pipeline will concatenate the raw reads before performing any downstream analysis. Below is an example for the same sample sequenced across 3 lanes:
-
-```csv title="samplesheet.csv"
-sample,fastq_1,fastq_2
-CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
-CONTROL_REP1,AEG588A1_S1_L003_R1_001.fastq.gz,AEG588A1_S1_L003_R2_001.fastq.gz
-CONTROL_REP1,AEG588A1_S1_L004_R1_001.fastq.gz,AEG588A1_S1_L004_R2_001.fastq.gz
-```
-
-### Full samplesheet
-
-The pipeline will auto-detect whether a sample is single- or paired-end using the information provided in the samplesheet. The samplesheet can have as many columns as you desire, however, there is a strict requirement for the first 3 columns to match those defined in the table below.
-
-A final samplesheet file consisting of both single- and paired-end data may look something like the one below. This is for 6 samples, where `TREATMENT_REP3` has been sequenced twice.
-
-```csv title="samplesheet.csv"
-sample,fastq_1,fastq_2
-CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
-CONTROL_REP2,AEG588A2_S2_L002_R1_001.fastq.gz,AEG588A2_S2_L002_R2_001.fastq.gz
-CONTROL_REP3,AEG588A3_S3_L002_R1_001.fastq.gz,AEG588A3_S3_L002_R2_001.fastq.gz
-TREATMENT_REP1,AEG588A4_S4_L003_R1_001.fastq.gz,
-TREATMENT_REP2,AEG588A5_S5_L003_R1_001.fastq.gz,
-TREATMENT_REP3,AEG588A6_S6_L003_R1_001.fastq.gz,
-TREATMENT_REP3,AEG588A6_S6_L004_R1_001.fastq.gz,
-```
-
-| Column    | Description                                                                                                                                                                            |
-| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `sample`  | Custom sample name. This entry will be identical for multiple sequencing libraries/runs from the same sample. Spaces in sample names are automatically converted to underscores (`_`). |
-| `fastq_1` | Full path to FastQ file for Illumina short reads 1. File has to be gzipped and have the extension ".fastq.gz" or ".fq.gz".                                                             |
-| `fastq_2` | Full path to FastQ file for Illumina short reads 2. File has to be gzipped and have the extension ".fastq.gz" or ".fq.gz".                                                             |
-
-An [example samplesheet](../assets/samplesheet.csv) has been provided with the pipeline.
-
-## Running the pipeline
-
-The typical command for running the pipeline is as follows:
+For repeated runs, you can provide parameters in a YAML/JSON file:
 
 ```bash
-nextflow run nerettilab/scrna_analysis_ml_pipeline --input ./samplesheet.csv --outdir ./results --genome GRCh37 -profile docker
+nextflow run nerettilab/scrna_analysis_ml_pipeline -profile docker -params-file params.yaml
 ```
 
-This will launch the pipeline with the `docker` configuration profile. See below for more information about profiles.
-
-Note that the pipeline will create the following files in your working directory:
-
-```bash
-work                # Directory containing the nextflow working files
-<OUTDIR>            # Finished results in specified location (defined with --outdir)
-.nextflow_log       # Log file from Nextflow
-# Other nextflow hidden files, eg. history of pipeline runs and old logs.
+Example params.yaml:
+```yaml
+input: 'samplesheet.csv'
+outdir: 'results'
+threshold_combinations: 'config.json'
+column1: 'age'
+column2: 'cell_type'
+sample_column: 'orig.ident'
+use_raw: true
+save_h5ad: true
 ```
+
+## Output
+
+The pipeline generates:
+
+1. Processed Data:
+   * TSV files containing grouped analysis results
+   * Optional preprocessed h5ad files
+   * Gene combination analysis results
+
+2. Visualizations:
+   * Bar charts showing proportions across groups
+   * Pie charts displaying cell type distributions
+   * Combined visualizations based on analysis criteria
+
+3. Pipeline Info:
+   * Pipeline execution reports
+   * Software versions
+   * Resource usage logs
+
+## Resource Requirements
+
+The pipeline is configured with reasonable defaults for resource requirements:
+
+* Default maximum CPUs: 16
+* Default maximum memory: 256 GB
+* Default maximum time: 240 hours
+
+These can be adjusted using:
+* `--max_cpus`
+* `--max_memory`
+* `--max_time`
+
+
 
 If you wish to repeatedly use the same parameters for multiple runs, rather than specifying each flag in the command, you can specify these in a params file.
 
@@ -88,21 +188,20 @@ with `params.yaml` containing:
 ```yaml
 input: './samplesheet.csv'
 outdir: './results/'
-genome: 'GRCh37'
 <...>
 ```
 
 You can also generate such `YAML`/`JSON` files via [nf-core/launch](https://nf-co.re/launch).
 
-### Updating the pipeline
+<!-- ### Updating the pipeline
 
-When you run the above command, Nextflow automatically pulls the pipeline code from GitHub and stores it as a cached version. When running the pipeline after this, it will always use the cached version if available - even if the pipeline has been updated since. To make sure that you're running the latest version of the pipeline, make sure that you regularly update the cached version of the pipeline:
+When you run the above command, Nextflow automatically pulls the pipeline code from GitHub and stores it as a cached version. When running the pipeline after this, it will always use the cached version if available - even if the pipeline has been updated since. To make sure that you're running the latest version of the pipeline, make sure that you regularly update the cached version of the pipeline: -->
 
-```bash
+<!-- ```bash
 nextflow pull nerettilab/scrna_analysis_ml_pipeline
-```
+``` -->
 
-### Reproducibility
+<!-- ### Reproducibility
 
 It is a good idea to specify a pipeline version when running the pipeline on your data. This ensures that a specific version of the pipeline code and software are used when you run your pipeline. If you keep using the same tag, you'll be running the same version of the pipeline, even if there have been changes to the code since.
 
@@ -221,4 +320,4 @@ We recommend adding the following line to your environment to limit this (typica
 
 ```bash
 NXF_OPTS='-Xms1g -Xmx4g'
-```
+``` -->
